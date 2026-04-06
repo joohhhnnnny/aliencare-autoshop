@@ -1,10 +1,10 @@
-import { NavFooter } from '@/components/shared/nav-footer';
 import { NavMain } from '@/components/shared/nav-main';
 import { NavUser } from '@/components/shared/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 import { BarChart4, FoldersIcon, Home, LogOut, LucideFileBarChart2, LucideReceiptText, Package, Tags, Users } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -15,22 +15,22 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Services',
-        href: '#',
+        href: '/services',
         icon: FoldersIcon,
     },
     {
         title: 'Job Orders',
-        href: '#',
+        href: '/job-orders',
         icon: Tags,
     },
     {
         title: 'Point of Sale',
-        href: '#',
+        href: '/pos',
         icon: BarChart4,
     },
     {
         title: 'Billing & Payment',
-        href: '#',
+        href: '/billing',
         icon: LucideReceiptText,
     },
     {
@@ -40,33 +40,37 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Customers',
-        href: '#',
+        href: '/customers',
         icon: Users,
     },
     {
         title: 'Reports and Analytics',
-        href: '#',
+        href: '/reports',
         icon: LucideFileBarChart2,
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Sign Out',
-        href: '#',
-        icon: LogOut,
-    },
-];
-
 export function AppSidebar() {
+    const { logout } = useAuth();
+    const navigate = useNavigate();
+    const { toggleSidebar, state } = useSidebar();
+
+    const handleSignOut = async () => {
+        await logout();
+        navigate('/');
+    };
+
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader className="m-0 p-0">
                 <SidebarMenu className="m-0 p-0">
                     <SidebarMenuItem className="m-0 p-0">
-                        <Link to="/dashboard" className="block h-full w-full">
-                            <AppLogo />
-                        </Link>
+                        <button onClick={toggleSidebar} className="block h-full w-full cursor-pointer">
+                            {state === 'collapsed'
+                                ? <img src="/images/iconlogo.svg" alt="AlienCare AutoShop" className="block h-full w-full object-contain p-1" />
+                                : <AppLogo />
+                            }
+                        </button>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
@@ -76,7 +80,18 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            onClick={handleSignOut}
+                            tooltip={{ children: 'Sign Out' }}
+                            className="text-sidebar-foreground hover:text-sidebar-accent"
+                        >
+                            <LogOut />
+                            <span>Sign Out</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

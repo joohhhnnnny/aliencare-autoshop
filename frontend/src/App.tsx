@@ -1,8 +1,7 @@
 import { GuestRoute, ProtectedRoute } from '@/router';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 // Layouts
-import AppLayout from '@/components/layout/app-layout';
 import AuthLayout from '@/components/layout/auth-layout';
 import SettingsLayout from '@/components/layout/settings/layout';
 
@@ -19,14 +18,32 @@ import Register from '@/pages/auth/register';
 import ResetPassword from '@/pages/auth/reset-password';
 import VerifyEmail from '@/pages/auth/verify-email';
 
-// Dashboard pages
+// Front Desk pages
 import Dashboard from '@/pages/dashboard/dashboard';
 import Inventory from '@/pages/dashboard/Inventory';
+import Services from '@/pages/dashboard/services';
+import JobOrders from '@/pages/dashboard/job-orders';
+import PointOfSale from '@/pages/dashboard/pos';
+import Billing from '@/pages/dashboard/billing';
+import Customers from '@/pages/dashboard/customers';
+import Reports from '@/pages/dashboard/reports';
 
 // Settings pages
 import Appearance from '@/pages/settings/appearance';
 import Password from '@/pages/settings/password';
 import Profile from '@/pages/settings/profile';
+
+// Admin pages
+import AdminDashboard from '@/pages/admin/dashboard';
+import FrontDeskAccounts from '@/pages/admin/frontdesk-accounts';
+
+// Customer pages
+import CustomerDashboard from '@/pages/customer/dashboard';
+import CustomerServices from '@/pages/customer/services';
+import MyServices from '@/pages/customer/my-services';
+import BillingPayment from '@/pages/customer/billing-payment';
+import CustomerProfile from '@/pages/customer/profile';
+import CustomerLogs from '@/pages/customer/logs';
 
 export default function App() {
     return (
@@ -44,16 +61,22 @@ export default function App() {
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
             </Route>
 
-            {/* Protected routes */}
+            {/* Front Desk protected routes */}
             <Route
                 element={
-                    <ProtectedRoute>
-                        <AppLayout />
+                    <ProtectedRoute allowedRoles={['frontdesk']}>
+                        <Outlet />
                     </ProtectedRoute>
                 }
             >
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inventory" element={<Inventory />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/job-orders" element={<JobOrders />} />
+                <Route path="/pos" element={<PointOfSale />} />
+                <Route path="/billing" element={<Billing />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/reports" element={<Reports />} />
                 <Route path="/confirm-password" element={<ConfirmPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
 
@@ -83,6 +106,34 @@ export default function App() {
                         </SettingsLayout>
                     }
                 />
+            </Route>
+
+            {/* Admin protected routes */}
+            <Route
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <Outlet />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/frontdesk-accounts" element={<FrontDeskAccounts />} />
+            </Route>
+
+            {/* Customer protected routes */}
+            <Route
+                element={
+                    <ProtectedRoute allowedRoles={['customer']}>
+                        <Outlet />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="/customer" element={<CustomerDashboard />} />
+                <Route path="/customer/services" element={<CustomerServices />} />
+                <Route path="/customer/my-services" element={<MyServices />} />
+                <Route path="/customer/billing" element={<BillingPayment />} />
+                <Route path="/customer/profile" element={<CustomerProfile />} />
+                <Route path="/customer/logs" element={<CustomerLogs />} />
             </Route>
         </Routes>
     );

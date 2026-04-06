@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, LoaderCircle, LockKeyhole, Mail } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from 'lucide-react';
+import type { UserRole } from '@/types';
 
 function GoogleIcon() {
     return (
@@ -53,6 +54,7 @@ export default function Login({ status }: { status?: string }) {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -61,7 +63,6 @@ export default function Login({ status }: { status?: string }) {
         setFormError(null);
         try {
             await login(email, password, remember);
-            navigate('/dashboard');
         } catch (error) {
             if (error instanceof ApiError && error.status === 422) {
                 const flatErrors = flattenValidationErrors(error.validationErrors);
@@ -178,7 +179,7 @@ export default function Login({ status }: { status?: string }) {
                                 <LockKeyhole className="h-4 w-4 shrink-0 text-white/50 transition group-focus-within:text-[#d4af37]" />
                                 <Input
                                     id="password"
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
@@ -187,6 +188,15 @@ export default function Login({ status }: { status?: string }) {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="h-11 border-0 bg-transparent px-0 text-sm text-white placeholder:text-white/40 shadow-none focus-visible:ring-0"
                                 />
+                                <button
+                                    type="button"
+                                    tabIndex={-1}
+                                    onClick={() => setShowPassword((v) => !v)}
+                                    className="shrink-0 text-white/40 transition hover:text-white/70"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
                             </div>
                             <InputError message={errors.password} className="text-xs text-red-400" />
                         </div>

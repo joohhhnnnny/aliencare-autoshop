@@ -47,7 +47,6 @@ export default function Register() {
         setErrors({});
         try {
             await register(name, email, password, passwordConfirmation);
-            navigate('/dashboard');
         } catch (error) {
             if (error instanceof ApiError && error.status === 422) {
                 const flatErrors = flattenValidationErrors(error.validationErrors);

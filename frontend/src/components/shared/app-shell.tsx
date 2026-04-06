@@ -8,8 +8,11 @@ interface AppShellProps {
 
 export function AppShell({ children, variant = 'header' }: AppShellProps) {
     const [isOpen] = useState(() => {
-        const saved = localStorage.getItem('sidebar_state');
-        return saved ? saved === 'true' : true;
+        // SidebarProvider persists to a cookie named 'sidebar_state'.
+        // Read the same cookie so defaultOpen always matches the user's last state.
+        const match = document.cookie.match(/(?:^|;\s*)sidebar_state=([^;]*)/);
+        const saved = match ? match[1] : null;
+        return saved !== null ? saved === 'true' : true;
     });
 
     if (variant === 'header') {

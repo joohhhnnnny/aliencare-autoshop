@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\BayController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\FrontDeskAccountController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\JobOrderController;
@@ -200,4 +201,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
 
     Route::get('/bays', [BayController::class, 'index'])->name('bays.index');
     Route::get('/mechanics', [MechanicController::class, 'index'])->name('mechanics.index');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Routes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('admin/frontdesk-accounts')->name('admin.frontdesk-accounts.')->group(function () {
+        Route::get('/', [FrontDeskAccountController::class, 'index'])->name('index');
+        Route::post('/', [FrontDeskAccountController::class, 'store'])->name('store');
+        Route::delete('/{id}', [FrontDeskAccountController::class, 'destroy'])->name('destroy');
+    });
 });

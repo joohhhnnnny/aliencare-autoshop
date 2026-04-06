@@ -29,6 +29,21 @@
 /.vscode
 /.zed
 
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Laravel generated/cache (root-level, from old structure)
+/bootstrap/cache/
+/storage/framework/views/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/logs/
+/resources/js/actions/
+/resources/js/routes/
+/resources/js/wayfinder/
+
 # OS
 .DS_Store
 
@@ -50,3 +65,9 @@ yarn-error.log
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
+
+#Sql
+*.sql
+
+# Others
+*.pdf

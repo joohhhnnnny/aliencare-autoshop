@@ -21,10 +21,13 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export type UserRole = 'admin' | 'frontdesk' | 'customer';
+
 export interface User {
     id: number;
     name: string;
     email: string;
+    role: UserRole;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

@@ -93,6 +93,16 @@ php artisan migrate
 php artisan db:seed
 ```
 
+Seeded demo access after running `php artisan db:seed`:
+
+| Role       | Email                         | Password        | Dashboard         |
+|------------|-------------------------------|-----------------|-------------------|
+| Admin      | `admin@aliencare.test`        | `AlienCare123!` | `/admin`          |
+| Front Desk | `frontdesk@aliencare.test`    | `AlienCare123!` | `/dashboard`      |
+| Customer   | `customer@aliencare.test`     | `AlienCare123!` | `/customer`       |
+
+Sign-up via the register page defaults to the **customer** role.
+
 ### 3. Frontend Setup
 
 ```bash
