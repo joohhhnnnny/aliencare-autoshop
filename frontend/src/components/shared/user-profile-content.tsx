@@ -1,15 +1,16 @@
+import { RoleAvatar } from '@/components/shared/role-avatar';
 import { useAuth } from '@/context/AuthContext';
-import { useInitials } from '@/hooks/use-initials';
-import { type EditField, ProfileEditModal } from './profile-edit-modal';
 import { CalendarDays, Car, FileText, History, Mail, MapPin, Phone, SquarePen } from 'lucide-react';
 import { useState } from 'react';
+import { AddVehicleModal } from './add-vehicle-modal';
+import { type EditField, ProfileEditModal } from './profile-edit-modal';
 
 type SectionKey = 'personal' | 'vehicles' | 'account' | 'special';
 
 export function UserProfileContent() {
     const { user } = useAuth();
-    const getInitials = useInitials();
     const [activeModal, setActiveModal] = useState<SectionKey | null>(null);
+    const [addVehicleOpen, setAddVehicleOpen] = useState(false);
 
     const isCustomer = user?.role === 'customer';
     const isFrontdesk = user?.role === 'frontdesk';
@@ -43,12 +44,12 @@ export function UserProfileContent() {
             title: 'Edit Account Details',
             fields: isCustomer
                 ? [
-                    { label: 'Last Service Date', key: 'last_service', value: 'Sep 1, 2025', type: 'text' },
-                    { label: 'Outstanding Balance', key: 'balance', value: '₱ 0.00', type: 'text' },
-                ]
+                      { label: 'Last Service Date', key: 'last_service', value: 'Sep 1, 2025', type: 'text' },
+                      { label: 'Outstanding Balance', key: 'balance', value: '₱ 0.00', type: 'text' },
+                  ]
                 : isFrontdesk
-                    ? [{ label: 'Department', key: 'department', value: 'Operations', type: 'text' }]
-                    : [{ label: 'System Access', key: 'access', value: 'Full Access', type: 'text' }],
+                  ? [{ label: 'Department', key: 'department', value: 'Operations', type: 'text' }]
+                  : [{ label: 'System Access', key: 'access', value: 'Full Access', type: 'text' }],
         },
         special: {
             title: 'Edit Special Information',
@@ -73,8 +74,14 @@ export function UserProfileContent() {
 
             {/* Hero */}
             <div className="profile-card flex items-center gap-5 rounded-xl p-5">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#2a2a2e] text-2xl font-bold text-white">
-                    {user ? getInitials(user.name) : '?'}
+                <div className="h-20 w-20 shrink-0">
+                    {user ? (
+                        <RoleAvatar role={user.role} className="h-full w-full" />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center rounded-full bg-[#2a2a2e] text-2xl font-bold text-white">
+                            ?
+                        </div>
+                    )}
                 </div>
                 <div>
                     <h2 className="text-xl font-bold">{user?.name ?? '—'}</h2>
@@ -87,12 +94,10 @@ export function UserProfileContent() {
                         {isCustomer && (
                             <>
                                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                                    <span className="h-2 w-2 rounded-full bg-blue-400" />
-                                    2 Vehicles
+                                    <span className="h-2 w-2 rounded-full bg-blue-400" />2 Vehicles
                                 </span>
                                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
-                                    4 Visits
+                                    <span className="h-2 w-2 rounded-full bg-yellow-400" />4 Visits
                                 </span>
                             </>
                         )}
@@ -163,7 +168,10 @@ export function UserProfileContent() {
                                         <span>Service History</span>
                                     </button>
                                 </div>
-                                <button className="mt-3 w-full rounded-lg bg-[#d4af37] py-2 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e]">
+                                <button
+                                    onClick={() => setAddVehicleOpen(true)}
+                                    className="mt-3 w-full rounded-lg bg-[#d4af37] py-2 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e]"
+                                >
                                     Add Vehicle
                                 </button>
                             </div>
@@ -246,9 +254,7 @@ export function UserProfileContent() {
                             <div className="flex items-start gap-2">
                                 <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span className="text-muted-foreground">Notes:</span>
-                                <span className="italic">
-                                    {isCustomer ? 'Uses synthetic oil only' : 'N/A'}
-                                </span>
+                                <span className="italic">{isCustomer ? 'Uses synthetic oil only' : 'N/A'}</span>
                             </div>
                         </div>
                     </div>
@@ -257,13 +263,11 @@ export function UserProfileContent() {
 
             {/* Shared edit modal */}
             {active && (
-                <ProfileEditModal
-                    open={activeModal !== null}
-                    onClose={() => setActiveModal(null)}
-                    title={active.title}
-                    fields={active.fields}
-                />
+                <ProfileEditModal open={activeModal !== null} onClose={() => setActiveModal(null)} title={active.title} fields={active.fields} />
             )}
+
+            {/* Add Vehicle modal */}
+            <AddVehicleModal open={addVehicleOpen} onClose={() => setAddVehicleOpen(false)} />
         </div>
     );
 }

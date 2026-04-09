@@ -1,23 +1,19 @@
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { ApiError } from '@/services/api';
-import { flattenValidationErrors } from '@/lib/validation-errors';
 import InputError from '@/components/shared/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthContext';
+import { flattenValidationErrors } from '@/lib/validation-errors';
+import { ApiError } from '@/services/api';
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from 'lucide-react';
-import type { UserRole } from '@/types';
+import { FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function GoogleIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
-            <path
-                fill="#EA4335"
-                d="M12 10.2v3.9h5.4c-.24 1.25-.96 2.3-2.04 3.01l3.3 2.56c1.92-1.77 3.03-4.37 3.03-7.46 0-.71-.06-1.39-.19-2H12Z"
-            />
+            <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.24 1.25-.96 2.3-2.04 3.01l3.3 2.56c1.92-1.77 3.03-4.37 3.03-7.46 0-.71-.06-1.39-.19-2H12Z" />
             <path
                 fill="#34A853"
                 d="M12 22c2.7 0 4.96-.89 6.61-2.42l-3.3-2.56c-.92.62-2.09.98-3.31.98-2.55 0-4.72-1.72-5.49-4.03l-3.41 2.64A10 10 0 0 0 12 22Z"
@@ -47,7 +43,6 @@ function FacebookIcon() {
 
 export default function Login({ status }: { status?: string }) {
     const { login } = useAuth();
-    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
@@ -121,15 +116,13 @@ export default function Login({ status }: { status?: string }) {
                 {/* Divider */}
                 <div className="flex items-center gap-4">
                     <div className="h-px flex-1 bg-white/20" />
-                    <span className="text-xs uppercase tracking-widest text-white/45">or</span>
+                    <span className="text-xs tracking-widest text-white/45 uppercase">or</span>
                     <div className="h-px flex-1 bg-white/20" />
                 </div>
 
                 {/* Status message */}
                 {status && (
-                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-                        {status}
-                    </div>
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{status}</div>
                 )}
 
                 {/* Login form */}
@@ -156,7 +149,7 @@ export default function Login({ status }: { status?: string }) {
                                     placeholder="name@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="h-11 border-0 bg-transparent px-0 text-sm text-white placeholder:text-white/40 shadow-none focus-visible:ring-0"
+                                    className="h-11 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
                                 />
                             </div>
                             <InputError message={errors.email} className="text-xs text-red-400" />
@@ -167,11 +160,7 @@ export default function Login({ status }: { status?: string }) {
                                 <Label htmlFor="password" className="text-sm font-medium text-white/90">
                                     Password
                                 </Label>
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-xs text-white/50 transition hover:text-[#d4af37]"
-                                    tabIndex={5}
-                                >
+                                <Link to="/forgot-password" className="text-xs text-white/50 transition hover:text-[#d4af37]" tabIndex={5}>
                                     Forgot password?
                                 </Link>
                             </div>
@@ -186,7 +175,7 @@ export default function Login({ status }: { status?: string }) {
                                     placeholder="Enter your password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="h-11 border-0 bg-transparent px-0 text-sm text-white placeholder:text-white/40 shadow-none focus-visible:ring-0"
+                                    className="h-11 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
                                 />
                                 <button
                                     type="button"

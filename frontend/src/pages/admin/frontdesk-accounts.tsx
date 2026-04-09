@@ -138,13 +138,7 @@ export default function FrontDeskAccounts() {
     );
 }
 
-function CreateAccountModal({
-    onClose,
-    onCreated,
-}: {
-    onClose: () => void;
-    onCreated: (account: FrontDeskAccount) => void;
-}) {
+function CreateAccountModal({ onClose, onCreated }: { onClose: () => void; onCreated: (account: FrontDeskAccount) => void }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -183,9 +177,7 @@ function CreateAccountModal({
                     </button>
                 </div>
 
-                {error && (
-                    <div className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-500">{error}</div>
-                )}
+                {error && <div className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-500">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                     <div className="space-y-2">
@@ -246,7 +238,11 @@ function CreateAccountModal({
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+                        >
                             Cancel
                         </button>
                         <button

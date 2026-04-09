@@ -1,6 +1,6 @@
-import { AppSharedSidebar } from './app-shared-sidebar';
 import { type NavItem } from '@/types';
 import { BarChart4, FoldersIcon, Home, LucideFileBarChart2, LucideReceiptText, Package, Tags, Users } from 'lucide-react';
+import { AppSharedSidebar } from './app-shared-sidebar';
 
 const mainNavItems: NavItem[] = [
     {
@@ -51,6 +51,8 @@ export function AppSidebar() {
             navItems={mainNavItems}
             role="Front Desk"
             profileHref="/profile"
+            settingsHref="/settings"
+            notificationsHref="/notifications"
             homeHref="/dashboard"
         />
     );

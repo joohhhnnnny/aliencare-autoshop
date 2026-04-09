@@ -1,6 +1,6 @@
-import { AppSharedSidebar } from './app-shared-sidebar';
 import { type NavItem } from '@/types';
-import { CreditCard, Home, ScrollText, ShoppingCart, Wrench } from 'lucide-react';
+import { ClipboardList, CreditCard, Home, ScrollText, ShoppingCart, Wrench } from 'lucide-react';
+import { AppSharedSidebar } from './app-shared-sidebar';
 
 const mainNavItems: NavItem[] = [
     {
@@ -16,6 +16,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'My Services',
         href: '/customer/my-services',
+        icon: ClipboardList,
+    },
+    {
+        title: 'Shop',
+        href: '/customer/shop',
         icon: ShoppingCart,
     },
     {
@@ -36,6 +41,8 @@ export function CustomerSidebar() {
             navItems={mainNavItems}
             role="Customer"
             profileHref="/customer/profile"
+            settingsHref="/customer/settings"
+            notificationsHref="/customer/notifications"
             homeHref="/customer"
         />
     );

@@ -1,6 +1,6 @@
-import { AppSharedSidebar } from './app-shared-sidebar';
 import { type NavItem } from '@/types';
 import { Home, Users } from 'lucide-react';
+import { AppSharedSidebar } from './app-shared-sidebar';
 
 const mainNavItems: NavItem[] = [
     {
@@ -21,6 +21,8 @@ export function AdminSidebar() {
             navItems={mainNavItems}
             role="Admin"
             profileHref="/admin/profile"
+            settingsHref="/admin/settings"
+            notificationsHref="/admin/notifications"
             homeHref="/admin"
         />
     );

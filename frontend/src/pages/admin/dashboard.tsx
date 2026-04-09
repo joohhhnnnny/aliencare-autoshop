@@ -4,9 +4,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Shield, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Admin Dashboard', href: '/admin' },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Admin Dashboard', href: '/admin' }];
 
 export default function AdminDashboard() {
     const { user } = useAuth();

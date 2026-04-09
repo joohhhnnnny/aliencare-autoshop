@@ -6,6 +6,7 @@ const ROUTE_LABELS: Record<string, string> = {
     '/customer': 'Dashboard',
     '/customer/services': 'Services',
     '/customer/my-services': 'My Services',
+    '/customer/shop': 'Shop',
     '/customer/billing': 'Billing & Payment',
     '/customer/profile': 'Profile',
     '/customer/logs': 'Logs',
@@ -38,10 +39,7 @@ export function PageHeader() {
     const { user } = useAuth();
     const { pathname } = useLocation();
 
-    const pageLabel =
-        ROUTE_LABELS[pathname] ??
-        pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') ??
-        'Page';
+    const pageLabel = ROUTE_LABELS[pathname] ?? pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') ?? 'Page';
 
     const roleLabel = user ? (ROLE_LABELS[user.role] ?? user.role) : '';
 

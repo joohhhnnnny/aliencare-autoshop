@@ -19,15 +19,15 @@ import ResetPassword from '@/pages/auth/reset-password';
 import VerifyEmail from '@/pages/auth/verify-email';
 
 // Front Desk pages
-import Dashboard from '@/pages/dashboard/dashboard';
-import FrontdeskProfile from '@/pages/dashboard/profile';
-import Inventory from '@/pages/dashboard/Inventory';
-import Services from '@/pages/dashboard/services';
-import JobOrders from '@/pages/dashboard/job-orders';
-import PointOfSale from '@/pages/dashboard/pos';
 import Billing from '@/pages/dashboard/billing';
 import Customers from '@/pages/dashboard/customers';
+import Dashboard from '@/pages/dashboard/dashboard';
+import Inventory from '@/pages/dashboard/Inventory';
+import JobOrders from '@/pages/dashboard/job-orders';
+import PointOfSale from '@/pages/dashboard/pos';
+import FrontdeskProfile from '@/pages/dashboard/profile';
 import Reports from '@/pages/dashboard/reports';
+import Services from '@/pages/dashboard/services';
 
 // Settings pages
 import Appearance from '@/pages/settings/appearance';
@@ -40,12 +40,18 @@ import FrontDeskAccounts from '@/pages/admin/frontdesk-accounts';
 import AdminProfile from '@/pages/admin/profile';
 
 // Customer pages
-import CustomerDashboard from '@/pages/customer/dashboard';
-import CustomerServices from '@/pages/customer/services';
-import MyServices from '@/pages/customer/my-services';
 import BillingPayment from '@/pages/customer/billing-payment';
-import CustomerProfile from '@/pages/customer/profile';
+import CustomerDashboard from '@/pages/customer/dashboard';
 import CustomerLogs from '@/pages/customer/logs';
+import MyServices from '@/pages/customer/my-services';
+import CustomerNotifications from '@/pages/customer/notifications';
+import CustomerProfile from '@/pages/customer/profile';
+import CustomerServices from '@/pages/customer/services';
+import CustomerSettings from '@/pages/customer/settings';
+import CustomerShop from '@/pages/customer/shop';
+
+// Front Desk extra pages
+import FrontdeskNotifications from '@/pages/dashboard/notifications';
 
 export default function App() {
     return (
@@ -56,9 +62,29 @@ export default function App() {
             <Route path="/faqs" element={<FAQs />} />
 
             {/* Guest-only routes (auth) */}
-            <Route element={<GuestRoute><Login /></GuestRoute>} path="/login" />
-            <Route element={<GuestRoute><Register /></GuestRoute>} path="/register" />
-            <Route element={<GuestRoute><AuthLayout /></GuestRoute>}>
+            <Route
+                element={
+                    <GuestRoute>
+                        <Login />
+                    </GuestRoute>
+                }
+                path="/login"
+            />
+            <Route
+                element={
+                    <GuestRoute>
+                        <Register />
+                    </GuestRoute>
+                }
+                path="/register"
+            />
+            <Route
+                element={
+                    <GuestRoute>
+                        <AuthLayout />
+                    </GuestRoute>
+                }
+            >
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
             </Route>
@@ -80,6 +106,7 @@ export default function App() {
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/notifications" element={<FrontdeskNotifications />} />
                 <Route path="/confirm-password" element={<ConfirmPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
 
@@ -135,9 +162,12 @@ export default function App() {
                 <Route path="/customer" element={<CustomerDashboard />} />
                 <Route path="/customer/services" element={<CustomerServices />} />
                 <Route path="/customer/my-services" element={<MyServices />} />
+                <Route path="/customer/shop" element={<CustomerShop />} />
                 <Route path="/customer/billing" element={<BillingPayment />} />
                 <Route path="/customer/profile" element={<CustomerProfile />} />
                 <Route path="/customer/logs" element={<CustomerLogs />} />
+                <Route path="/customer/settings" element={<CustomerSettings />} />
+                <Route path="/customer/notifications" element={<CustomerNotifications />} />
             </Route>
         </Routes>
     );
