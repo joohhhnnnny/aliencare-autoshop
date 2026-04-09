@@ -1,8 +1,8 @@
 import { useAuth } from '@/context/AuthContext';
 import { useInitials } from '@/hooks/use-initials';
-import { type EditField, ProfileEditModal } from './profile-edit-modal';
 import { CalendarDays, Car, FileText, History, Mail, MapPin, Phone, SquarePen } from 'lucide-react';
 import { useState } from 'react';
+import { type EditField, ProfileEditModal } from './profile-edit-modal';
 
 type SectionKey = 'personal' | 'vehicles' | 'account' | 'special';
 
@@ -43,12 +43,12 @@ export function UserProfileContent() {
             title: 'Edit Account Details',
             fields: isCustomer
                 ? [
-                    { label: 'Last Service Date', key: 'last_service', value: 'Sep 1, 2025', type: 'text' },
-                    { label: 'Outstanding Balance', key: 'balance', value: '₱ 0.00', type: 'text' },
-                ]
+                      { label: 'Last Service Date', key: 'last_service', value: 'Sep 1, 2025', type: 'text' },
+                      { label: 'Outstanding Balance', key: 'balance', value: '₱ 0.00', type: 'text' },
+                  ]
                 : isFrontdesk
-                    ? [{ label: 'Department', key: 'department', value: 'Operations', type: 'text' }]
-                    : [{ label: 'System Access', key: 'access', value: 'Full Access', type: 'text' }],
+                  ? [{ label: 'Department', key: 'department', value: 'Operations', type: 'text' }]
+                  : [{ label: 'System Access', key: 'access', value: 'Full Access', type: 'text' }],
         },
         special: {
             title: 'Edit Special Information',
@@ -87,12 +87,10 @@ export function UserProfileContent() {
                         {isCustomer && (
                             <>
                                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                                    <span className="h-2 w-2 rounded-full bg-blue-400" />
-                                    2 Vehicles
+                                    <span className="h-2 w-2 rounded-full bg-blue-400" />2 Vehicles
                                 </span>
                                 <span className="flex items-center gap-1.5 text-xs font-medium">
-                                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
-                                    4 Visits
+                                    <span className="h-2 w-2 rounded-full bg-yellow-400" />4 Visits
                                 </span>
                             </>
                         )}
@@ -246,9 +244,7 @@ export function UserProfileContent() {
                             <div className="flex items-start gap-2">
                                 <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                                 <span className="text-muted-foreground">Notes:</span>
-                                <span className="italic">
-                                    {isCustomer ? 'Uses synthetic oil only' : 'N/A'}
-                                </span>
+                                <span className="italic">{isCustomer ? 'Uses synthetic oil only' : 'N/A'}</span>
                             </div>
                         </div>
                     </div>
@@ -257,12 +253,7 @@ export function UserProfileContent() {
 
             {/* Shared edit modal */}
             {active && (
-                <ProfileEditModal
-                    open={activeModal !== null}
-                    onClose={() => setActiveModal(null)}
-                    title={active.title}
-                    fields={active.fields}
-                />
+                <ProfileEditModal open={activeModal !== null} onClose={() => setActiveModal(null)} title={active.title} fields={active.fields} />
             )}
         </div>
     );

@@ -38,10 +38,7 @@ export function PageHeader() {
     const { user } = useAuth();
     const { pathname } = useLocation();
 
-    const pageLabel =
-        ROUTE_LABELS[pathname] ??
-        pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') ??
-        'Page';
+    const pageLabel = ROUTE_LABELS[pathname] ?? pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') ?? 'Page';
 
     const roleLabel = user ? (ROLE_LABELS[user.role] ?? user.role) : '';
 

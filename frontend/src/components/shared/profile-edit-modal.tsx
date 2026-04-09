@@ -1,10 +1,4 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 
@@ -23,13 +17,10 @@ interface ProfileEditModalProps {
 }
 
 export function ProfileEditModal({ open, onClose, title, fields }: ProfileEditModalProps) {
-    const [values, setValues] = useState<Record<string, string>>(
-        () => Object.fromEntries(fields.map((f) => [f.key, f.value])),
-    );
+    const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.key, f.value])));
 
     // Re-sync when fields change (different modal section opened)
-    const handleChange = (key: string, val: string) =>
-        setValues((prev) => ({ ...prev, [key]: val }));
+    const handleChange = (key: string, val: string) => setValues((prev) => ({ ...prev, [key]: val }));
 
     const handleSave = () => {
         // TODO: wire up to API when backend endpoints are ready
@@ -46,15 +37,13 @@ export function ProfileEditModal({ open, onClose, title, fields }: ProfileEditMo
                 <div className="flex flex-col gap-4 py-2">
                     {fields.map((field) => (
                         <div key={field.key} className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">
-                                {field.label}
-                            </label>
+                            <label className="text-xs font-medium text-muted-foreground">{field.label}</label>
                             {field.type === 'textarea' ? (
                                 <textarea
                                     value={values[field.key] ?? ''}
                                     onChange={(e) => handleChange(field.key, e.target.value)}
                                     rows={3}
-                                    className="w-full resize-none rounded-md border border-[#2a2a2e] bg-[#0d0d10] px-3 py-2 text-sm text-foreground outline-none transition focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40 placeholder:text-muted-foreground"
+                                    className="w-full resize-none rounded-md border border-[#2a2a2e] bg-[#0d0d10] px-3 py-2 text-sm text-foreground transition outline-none placeholder:text-muted-foreground focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/40"
                                 />
                             ) : (
                                 <Input

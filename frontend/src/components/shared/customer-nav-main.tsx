@@ -9,10 +9,12 @@ export function CustomerNavMain({ items = [] }: { items: NavItem[] }) {
 
     return (
         <SidebarGroup className="-mt-2 px-2 py-0">
-            <SidebarGroupLabel className="mb-0 justify-center text-center text-base text-sidebar-primary group-data-[collapsible=icon]:hidden">Customer</SidebarGroupLabel>
+            <SidebarGroupLabel className="mb-0 justify-center text-center text-base text-sidebar-primary group-data-[collapsible=icon]:hidden">
+                Customer
+            </SidebarGroupLabel>
 
             {/* Icons Row */}
-            <div className="flex items-center justify-center gap-4 px-2 pb-6 pt-1 group-data-[collapsible=icon]:pb-2 group-data-[collapsible=icon]:pt-0">
+            <div className="flex items-center justify-center gap-4 px-2 pt-1 pb-6 group-data-[collapsible=icon]:pt-0 group-data-[collapsible=icon]:pb-2">
                 <UserCircle2
                     className="h-5 w-5 cursor-pointer text-white transition-colors hover:text-sidebar-primary"
                     onClick={() => navigate('/customer/profile')}
