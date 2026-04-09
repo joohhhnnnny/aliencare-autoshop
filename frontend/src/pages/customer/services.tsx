@@ -1,24 +1,17 @@
 import CustomerLayout from '@/components/layout/customer-layout';
-<<<<<<< HEAD
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { ServiceCatalogItem } from '@/types/customer';
-import { ArrowRight, Check, ChevronDown, Clock, Loader2, Star, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
-=======
-import { AlertTriangle, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Star, Users, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, Star, Users, X } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
->>>>>>> refs/remotes/origin/main
 
 // ── types ─────────────────────────────────────────────────────────────────────
 type Category = 'Maintenance' | 'Cleaning' | 'Repair';
 
-<<<<<<< HEAD
 const categoryMap: Record<string, Category> = {
     maintenance: 'Maintenance',
     cleaning: 'Cleaning',
     repair: 'Repair',
 };
-=======
 interface Service {
     id: number;
     name: string;
@@ -240,7 +233,6 @@ const ALL_SERVICES: Service[] = [
         includes: ['Battery test', 'New battery install', 'Terminal cleaning'],
     },
 ];
->>>>>>> refs/remotes/origin/main
 
 // ── static data (time slots remain hardcoded) ─────────────────────────────────
 const TIME_SLOTS = [
@@ -445,12 +437,6 @@ type PayMethod = 'gcash' | 'maya' | 'card' | 'bank';
 
 export default function CustomerServices() {
     const [activeCategory, setActiveCategory] = useState<Category>('Maintenance');
-<<<<<<< HEAD
-    const [selectedId, setSelectedId] = useState<number | null>(null);
-    const [selectedDateIdx, setSelectedDateIdx] = useState(0);
-    const [selectedTimeIdx, setSelectedTimeIdx] = useState(0);
-    const { services, recommended, loading, error } = useServiceCatalog({ per_page: 50 });
-=======
     const [selectedId, setSelectedId] = useState(2);
     const [modalStep, setModalStep] = useState<ModalStep>(null);
     const [secureOption, setSecureOption] = useState<SecureOption>('reservation');
@@ -467,6 +453,7 @@ export default function CustomerServices() {
     const [selectedTimeIdx, setSelectedTimeIdx] = useState(0);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const dateContainerRef = useRef<HTMLDivElement>(null);
+    const { services, recommended, loading, error } = useServiceCatalog({ per_page: 50 });
 
     // OTP countdown
     useEffect(() => {
@@ -495,7 +482,6 @@ export default function CustomerServices() {
     }
 
     const fmtCountdown = `00:${String(otpCountdown).padStart(2, '0')}`;
->>>>>>> refs/remotes/origin/main
 
     // Auto-select the recommended service or first service when data loads
     const effectiveSelectedId = selectedId ?? recommended?.id ?? services[0]?.id ?? 0;
@@ -583,21 +569,6 @@ export default function CustomerServices() {
                                     Book Now <ArrowRight className="h-4 w-4" />
                                 </button>
                             </div>
-<<<<<<< HEAD
-                            {/* Decorative car silhouette */}
-                            <div className="pointer-events-none absolute top-0 right-0 h-full w-52">
-                                <div className="h-full w-full bg-linear-to-l from-[#d4af37]/8 to-transparent" />
-                                <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-20">
-                                    <svg viewBox="0 0 120 60" className="h-28 w-48 fill-[#d4af37]">
-                                        <path d="M10 40 L20 20 Q30 10 50 10 L70 10 Q90 10 100 20 L110 40 L115 42 Q118 44 118 47 L118 50 Q118 52 116 52 L104 52 Q102 52 101 50 Q100 46 96 46 Q92 46 91 50 Q90 52 88 52 L32 52 Q30 52 29 50 Q28 46 24 46 Q20 46 19 50 Q18 52 16 52 L4 52 Q2 52 2 50 L2 47 Q2 44 5 42 Z" />
-                                        <ellipse cx="24" cy="52" rx="8" ry="4" />
-                                        <ellipse cx="96" cy="52" rx="8" ry="4" />
-                                        {/* headlights */}
-                                        <rect x="106" y="28" width="8" height="5" rx="2" fill="white" opacity="0.6" />
-                                        <rect x="6" y="28" width="8" height="5" rx="2" fill="white" opacity="0.3" />
-                                    </svg>
-                                </div>
-=======
                             {/* Recommended image */}
                             <div className="pointer-events-none absolute top-0 right-0 h-full w-56 overflow-hidden rounded-r-xl">
                                 <div className="absolute inset-0 z-10 bg-linear-to-r from-[#1e1e22] via-[#1e1e22]/60 to-transparent" />
@@ -606,7 +577,6 @@ export default function CustomerServices() {
                                     alt="Recommended service"
                                     className="h-full w-full object-cover object-center opacity-85"
                                 />
->>>>>>> refs/remotes/origin/main
                             </div>
                         </div>
                     )}
@@ -653,11 +623,7 @@ export default function CustomerServices() {
                                 >
                                     <div className="flex flex-col gap-2">
                                         <p className="text-sm leading-snug font-bold">{service.name}</p>
-<<<<<<< HEAD
                                         <p className="text-xs font-semibold text-muted-foreground">{service.price_label}</p>
-=======
-                                        <p className="text-xs font-semibold text-muted-foreground">{service.priceLabel}</p>
->>>>>>> refs/remotes/origin/main
                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                             <Clock className="h-3 w-3 shrink-0" />
                                             <span>{service.duration}</span>
@@ -678,10 +644,7 @@ export default function CustomerServices() {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setSelectedId(service.id);
-<<<<<<< HEAD
-=======
                                                     setModalStep('confirm');
->>>>>>> refs/remotes/origin/main
                                                 }}
                                                 className="rounded-lg bg-[#d4af37] px-3 py-1.5 text-xs font-bold text-black shadow-[0_2px_8px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-80"
                                             >
