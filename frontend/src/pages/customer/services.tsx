@@ -12,22 +12,6 @@ const categoryMap: Record<string, Category> = {
     cleaning: 'Cleaning',
     repair: 'Repair',
 };
-interface Service {
-    id: number;
-    name: string;
-    priceLabel: string;
-    priceFixed: number;
-    duration: string;
-    estimatedDuration: string;
-    rating: number;
-    ratingCount: number;
-    category: Category;
-    features: string[];
-    queueLabel: string;
-    includes: string[];
-    recommended?: boolean;
-    recommendedNote?: string;
-}
 
 // ── static data (time slots remain hardcoded) ─────────────────────────────────
 const TIME_SLOTS = [
