@@ -44,7 +44,7 @@ class ReservationRepository extends BaseRepository implements ReservationReposit
      */
     public function all(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = $this->model->with('inventory');
+        $query = $this->model->with(['inventory', 'feeTransaction']);
 
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -56,6 +56,10 @@ class ReservationRepository extends BaseRepository implements ReservationReposit
 
         if (isset($filters['job_order_number'])) {
             $query->where('job_order_number', 'like', "%{$filters['job_order_number']}%");
+        }
+
+        if (isset($filters['customer_id'])) {
+            $query->where('customer_id', $filters['customer_id']);
         }
 
         if (isset($filters['start_date'])) {

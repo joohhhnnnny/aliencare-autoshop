@@ -100,6 +100,9 @@ export interface JobOrder {
     invoice_id: number | null;
     approved_at: string | null;
     notes: string | null;
+    arrival_date: string | null;
+    arrival_time: string | null;
+    service: { id: number; name: string } | null;
     created_at: string;
     updated_at: string;
     vehicle: Vehicle | null;

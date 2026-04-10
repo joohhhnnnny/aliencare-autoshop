@@ -34,6 +34,14 @@ export interface UpdateVehicleData {
     color?: string;
 }
 
+export interface CreateBookingData {
+    vehicle_id: number;
+    service_id: number;
+    arrival_date: string; // Y-m-d
+    arrival_time: string; // HH:MM
+    notes?: string;
+}
+
 class CustomerService {
     async getMe(): Promise<ApiResponse<CustomerProfile>> {
         return api.get<ApiResponse<CustomerProfile>>('/v1/customers/me');
@@ -74,6 +82,10 @@ class CustomerService {
 
     async getJobOrders(customerId: number): Promise<ApiResponse<JobOrder[]>> {
         return api.get<ApiResponse<JobOrder[]>>(`/v1/customers/${customerId}/job-orders`);
+    }
+
+    async createBooking(data: CreateBookingData): Promise<ApiResponse<JobOrder>> {
+        return api.post<ApiResponse<JobOrder>>('/v1/customer/book', data);
     }
 }
 

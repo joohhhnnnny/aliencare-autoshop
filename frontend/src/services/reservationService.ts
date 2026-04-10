@@ -165,6 +165,26 @@ class ReservationService {
             }>
         >('/v1/reservations/summary');
     }
+
+    // Initiate Xendit payment for a reservation fee.
+    // Returns the Xendit hosted-payment URL to redirect the customer to.
+    async payReservationFee(id: number): Promise<ApiResponse<{ payment_url: string }>> {
+        return api.post<ApiResponse<{ payment_url: string }>>(`/v1/reservations/${id}/pay-fee`);
+    }
+
+    // Get customer's own reservations (scoped to authenticated user)
+    async getMyReservations(filters: ReservationFilters = {}): Promise<PaginatedResponse<Reservation>> {
+        const params: Record<string, string | number> = { mine: 1 };
+
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined) {
+                params[key] = String(value);
+            }
+        });
+
+        const response = await api.get<ApiResponse<PaginatedResponse<Reservation>>>('/v1/reservations', params);
+        return this.transformPaginatedResponse(response.data);
+    }
 }
 
 export const reservationService = new ReservationService();

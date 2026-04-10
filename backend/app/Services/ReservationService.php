@@ -52,7 +52,7 @@ class ReservationService implements ReservationServiceInterface
             throw new ReservationNotFoundException($id);
         }
 
-        return $reservation->load('inventory');
+        return $reservation->load(['inventory', 'feeTransaction']);
     }
 
     /**

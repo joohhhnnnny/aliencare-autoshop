@@ -40,6 +40,19 @@ class ReservationResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
 
+            // Payment fields
+            'customer_id' => $this->customer_id,
+            'reservation_fee' => $this->reservation_fee ? (float) $this->reservation_fee : null,
+            'fee_transaction_id' => $this->fee_transaction_id,
+            'fee_payment_status' => $this->whenLoaded(
+                'feeTransaction',
+                fn () => $this->feeTransaction?->xendit_status
+            ),
+            'fee_payment_url' => $this->whenLoaded(
+                'feeTransaction',
+                fn () => $this->feeTransaction?->payment_url
+            ),
+
             // Computed values
             'is_expired' => $this->when(
                 $this->expires_at !== null,

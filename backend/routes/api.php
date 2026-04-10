@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\CustomerBookingController;
 use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\BayController;
@@ -250,6 +251,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
 
     Route::prefix('shop')->name('shop.')->group(function () {
         Route::post('/checkout', [ShopController::class, 'checkout'])->name('checkout');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Self-Service Routes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('customer')->name('customer.')->group(function () {
+        Route::post('/book', [CustomerBookingController::class, 'store'])->name('book');
     });
 });
 

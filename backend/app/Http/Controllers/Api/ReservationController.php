@@ -38,6 +38,14 @@ class ReservationController extends Controller
             'item_id' => $request->input('item_id'),
         ];
 
+        // When `mine=1` is passed, scope to the authenticated customer's reservations.
+        if ($request->boolean('mine')) {
+            $customer = Customer::where('email', $request->user()?->email)->first();
+            if ($customer) {
+                $filters['customer_id'] = $customer->id;
+            }
+        }
+
         // Remove null values
         $filters = array_filter($filters, fn ($value) => $value !== null);
 

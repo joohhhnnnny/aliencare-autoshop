@@ -63,6 +63,12 @@ export interface Reservation {
     notes?: string;
     created_at: string;
     updated_at: string;
+    // Payment fields
+    customer_id?: number;
+    reservation_fee?: number | null;
+    fee_transaction_id?: number | null;
+    fee_payment_status?: string | null;
+    fee_payment_url?: string | null;
     // Relationships
     inventory_item?: InventoryItem;
 }
