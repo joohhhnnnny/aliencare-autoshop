@@ -3,7 +3,7 @@
  * Handles customer-facing API calls (billing, logs, vehicles, job orders)
  */
 
-import { CustomerProfile, CustomerTransaction, Vehicle } from '@/types/customer';
+import { CustomerProfile, CustomerTransaction, JobOrder, Vehicle } from '@/types/customer';
 import { api, ApiResponse, PaginatedResponse } from './api';
 
 export interface CustomerTransactionFilters {
@@ -32,6 +32,14 @@ export interface UpdateVehicleData {
     year?: number;
     plate_number?: string;
     color?: string;
+}
+
+export interface CreateBookingData {
+    vehicle_id: number;
+    service_id: number;
+    arrival_date: string; // Y-m-d
+    arrival_time: string; // HH:MM
+    notes?: string;
 }
 
 class CustomerService {
@@ -72,8 +80,12 @@ class CustomerService {
         return api.get<ApiResponse<Vehicle[]>>(`/v1/customers/${customerId}/vehicles`);
     }
 
-    async getJobOrders(customerId: number): Promise<ApiResponse<unknown[]>> {
-        return api.get<ApiResponse<unknown[]>>(`/v1/customers/${customerId}/job-orders`);
+    async getJobOrders(customerId: number): Promise<ApiResponse<JobOrder[]>> {
+        return api.get<ApiResponse<JobOrder[]>>(`/v1/customers/${customerId}/job-orders`);
+    }
+
+    async createBooking(data: CreateBookingData): Promise<ApiResponse<JobOrder>> {
+        return api.post<ApiResponse<JobOrder>>('/v1/customer/book', data);
     }
 }
 

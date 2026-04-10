@@ -1,6 +1,8 @@
 import CustomerLayout from '@/components/layout/customer-layout';
+import { useCustomerProfile } from '@/hooks/useCustomerProfile';
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
-import { ServiceCatalogItem } from '@/types/customer';
+import { customerService } from '@/services/customerService';
+import { JobOrder, ServiceCatalogItem, Vehicle } from '@/types/customer';
 import { AlertTriangle, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, Star, Users, X } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -231,8 +233,24 @@ export default function CustomerServices() {
     });
     const [selectedTimeIdx, setSelectedTimeIdx] = useState(0);
     const [calendarOpen, setCalendarOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [bookingError, setBookingError] = useState<string | null>(null);
+    const [confirmedJO, setConfirmedJO] = useState<JobOrder | null>(null);
+    const [vehicleDropdownOpen, setVehicleDropdownOpen] = useState(false);
+    const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
     const dateContainerRef = useRef<HTMLDivElement>(null);
     const { services, recommended, loading, error } = useServiceCatalog({ per_page: 50 });
+    const { customer } = useCustomerProfile();
+
+    const vehicles: Vehicle[] = customer?.vehicles ?? [];
+    const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0] ?? null;
+
+    // Auto-select first vehicle when profile loads
+    useEffect(() => {
+        if (vehicles.length > 0 && selectedVehicleId === null) {
+            setSelectedVehicleId(vehicles[0].id);
+        }
+    }, [vehicles, selectedVehicleId]);
 
     // OTP countdown
     useEffect(() => {
@@ -261,6 +279,37 @@ export default function CustomerServices() {
     }
 
     const fmtCountdown = `00:${String(otpCountdown).padStart(2, '0')}`;
+
+    async function submitBooking() {
+        if (!selectedService || !selectedVehicle) return;
+        setIsSubmitting(true);
+        setBookingError(null);
+
+        // Format arrival time as HH:MM (24h)
+        const { h, m: slotMin } = parseTime(slot.time);
+        const arrivalTime = `${String(h).padStart(2, '0')}:${String(slotMin).padStart(2, '0')}`;
+        const arrivalDate = selectedDate.toISOString().split('T')[0]; // Y-m-d
+
+        try {
+            const response = await customerService.createBooking({
+                vehicle_id: selectedVehicle.id,
+                service_id: selectedService.id,
+                arrival_date: arrivalDate,
+                arrival_time: arrivalTime,
+            });
+            setConfirmedJO(response.data);
+            if (secureOption === 'no-payment') {
+                setModalStep('reserved');
+            } else {
+                setModalStep('success');
+            }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Booking failed. Please try again.';
+            setBookingError(msg);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
 
     // Auto-select the recommended service or first service when data loads
     const effectiveSelectedId = selectedId ?? recommended?.id ?? services[0]?.id ?? 0;
@@ -553,24 +602,57 @@ export default function CustomerServices() {
                     </div>
 
                     {/* Vehicle */}
-                    <div>
+                    <div className="relative">
                         <p className="mb-2 text-xs font-semibold text-foreground">Vehicle</p>
-                        <button className="flex w-full items-center justify-between rounded-lg border border-[#2a2a2e] px-3 py-2 text-xs text-foreground transition-colors hover:border-[#d4af37]/50">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded bg-[#d4af37]/10">
-                                    <svg className="h-3.5 w-3.5 text-[#d4af37]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
-                                        />
-                                    </svg>
-                                </div>
-                                <span>Toyota Innova CAV 1234</span>
-                            </div>
-                            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
+                        {vehicles.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">No vehicles registered. Add one in your profile.</p>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={() => setVehicleDropdownOpen((p) => !p)}
+                                    className="flex w-full items-center justify-between rounded-lg border border-[#2a2a2e] px-3 py-2 text-xs text-foreground transition-colors hover:border-[#d4af37]/50"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex h-6 w-6 items-center justify-center rounded bg-[#d4af37]/10">
+                                            <svg className="h-3.5 w-3.5 text-[#d4af37]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <span>
+                                            {selectedVehicle
+                                                ? `${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.plate_number}`
+                                                : 'Select a vehicle'}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${vehicleDropdownOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {vehicleDropdownOpen && (
+                                    <div className="absolute top-full left-0 z-40 mt-1 w-full rounded-lg border border-[#2a2a2e] bg-[#18181b] shadow-xl">
+                                        {vehicles.map((v) => (
+                                            <button
+                                                key={v.id}
+                                                onClick={() => {
+                                                    setSelectedVehicleId(v.id);
+                                                    setVehicleDropdownOpen(false);
+                                                }}
+                                                className={`flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-[#2a2a2e] ${
+                                                    selectedVehicle?.id === v.id ? 'text-[#d4af37]' : 'text-foreground'
+                                                }`}
+                                            >
+                                                <span className="font-medium">{v.make} {v.model}</span>
+                                                <span className="text-muted-foreground">· {v.plate_number}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
                     {/* Booking Summary */}
@@ -649,7 +731,11 @@ export default function CustomerServices() {
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Vehicle: </span>
-                                        <span className="font-semibold">Toyota Innova &nbsp;·&nbsp; CAV 1234</span>
+                                        <span className="font-semibold">
+                                            {selectedVehicle
+                                                ? `${selectedVehicle.make} ${selectedVehicle.model} · ${selectedVehicle.plate_number}`
+                                                : 'No vehicle selected'}
+                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -713,7 +799,8 @@ export default function CustomerServices() {
                             </button>
                             <button
                                 onClick={() => setModalStep('secure')}
-                                className="rounded-lg bg-[#d4af37] px-5 py-2 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90"
+                                disabled={!selectedVehicle}
+                                className="rounded-lg bg-[#d4af37] px-5 py-2 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Confirm Booking
                             </button>
@@ -836,7 +923,11 @@ export default function CustomerServices() {
                                 </p>
                                 <p>
                                     <span className="text-muted-foreground">Vehicle: </span>
-                                    <span className="font-semibold">Toyota Innova &nbsp;·&nbsp; CAV 1234</span>
+                                    <span className="font-semibold">
+                                        {selectedVehicle
+                                            ? `${selectedVehicle.make} ${selectedVehicle.model} · ${selectedVehicle.plate_number}`
+                                            : '—'}
+                                    </span>
                                 </p>
                             </div>
 
@@ -911,19 +1002,26 @@ export default function CustomerServices() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 border-t border-[#2a2a2e] px-6 py-4">
-                            <button
-                                onClick={() => setModalStep('secure')}
-                                className="rounded-lg border border-[#2a2a2e] px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[#2a2a2e]"
-                            >
-                                Back
-                            </button>
-                            <button
-                                onClick={() => setModalStep('success')}
-                                className="rounded-lg bg-[#d4af37] px-5 py-2 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90"
-                            >
-                                Pay Now
-                            </button>
+                        <div className="flex flex-col gap-3 border-t border-[#2a2a2e] px-6 py-4">
+                            {bookingError && (
+                                <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">{bookingError}</p>
+                            )}
+                            <div className="flex items-center justify-end gap-3">
+                                <button
+                                    onClick={() => setModalStep('secure')}
+                                    className="rounded-lg border border-[#2a2a2e] px-5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[#2a2a2e]"
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={submitBooking}
+                                    disabled={isSubmitting || !payMethod}
+                                    className="flex items-center gap-2 rounded-lg bg-[#d4af37] px-5 py-2 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                    Pay Now
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -963,7 +1061,7 @@ export default function CustomerServices() {
                                 <div className="mb-3 flex items-center justify-between">
                                     <span className="text-sm text-muted-foreground">Job Order #:</span>
                                     <span className="text-sm font-bold text-[#d4af37]">
-                                        JO-{String(Math.floor(10000 + Math.random() * 90000)).slice(0, 5)}
+                                        {confirmedJO?.jo_number ?? '—'}
                                     </span>
                                 </div>
                                 <p className="mb-4 text-sm font-semibold">
@@ -980,7 +1078,9 @@ export default function CustomerServices() {
                                     <div>
                                         <p className="mb-0.5 text-xs text-muted-foreground">Service:</p>
                                         <p className="text-sm font-semibold text-[#d4af37]">{selectedService.name}</p>
-                                        <p className="text-xs text-muted-foreground">Vehicle: Toyota Innova - CAV 1234</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Vehicle: {selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model} - ${selectedVehicle.plate_number}` : '—'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -1112,12 +1212,17 @@ export default function CustomerServices() {
 
                             {/* Verify button */}
                             <button
-                                onClick={() => setModalStep('reserved')}
-                                disabled={otp.some((d) => d === '')}
-                                className="w-full rounded-lg bg-[#d4af37] py-2.5 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={submitBooking}
+                                disabled={otp.some((d) => d === '') || isSubmitting}
+                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#d4af37] py-2.5 text-sm font-bold text-black shadow-[0_4px_12px_rgba(212,175,55,0.3)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                Verify
+                                {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                Verify &amp; Reserve
                             </button>
+
+                            {bookingError && (
+                                <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400 text-center">{bookingError}</p>
+                            )}
 
                             {/* Resend */}
                             <p className="text-sm text-muted-foreground">
@@ -1170,7 +1275,7 @@ export default function CustomerServices() {
                                 <div className="mb-3 flex items-center justify-between">
                                     <span className="text-sm text-muted-foreground">Job Order #:</span>
                                     <span className="font-mono text-sm font-bold text-[#d4af37]">
-                                        JO-{String(Math.floor(10000 + Math.random() * 90000)).slice(0, 5)}
+                                        {confirmedJO?.jo_number ?? '—'}
                                     </span>
                                 </div>
                                 <p className="mb-4 text-sm font-semibold">
@@ -1183,8 +1288,8 @@ export default function CustomerServices() {
                                     </div>
                                     <div>
                                         <p className="mb-0.5 text-xs text-muted-foreground">Vehicle:</p>
-                                        <p className="text-sm font-semibold">Toyota Innova</p>
-                                        <p className="text-xs text-muted-foreground">CAV 1234</p>
+                                        <p className="text-sm font-semibold">{selectedVehicle ? `${selectedVehicle.make} ${selectedVehicle.model}` : '—'}</p>
+                                        <p className="text-xs text-muted-foreground">{selectedVehicle?.plate_number ?? ''}</p>
                                     </div>
                                     <div>
                                         <p className="mb-0.5 text-xs text-muted-foreground">Est. Start:</p>

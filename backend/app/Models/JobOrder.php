@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\ServiceCatalog;
 
 class JobOrder extends Model
 {
@@ -18,6 +19,9 @@ class JobOrder extends Model
         'jo_number',
         'customer_id',
         'vehicle_id',
+        'service_id',
+        'arrival_date',
+        'arrival_time',
         'status',
         'assigned_mechanic_id',
         'bay_id',
@@ -36,6 +40,7 @@ class JobOrder extends Model
             'service_fee' => 'decimal:2',
             'settled_flag' => 'boolean',
             'approved_at' => 'datetime',
+            'arrival_date' => 'date:Y-m-d',
         ];
     }
 
@@ -78,6 +83,11 @@ class JobOrder extends Model
         $itemsTotal = $this->items()->sum('total_price');
 
         return (float) $itemsTotal + (float) $this->service_fee;
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(ServiceCatalog::class);
     }
 
     public function customer(): BelongsTo

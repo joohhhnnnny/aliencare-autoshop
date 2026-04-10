@@ -46,6 +46,7 @@ import CustomerLogs from '@/pages/customer/logs';
 import MyServices from '@/pages/customer/my-services';
 import CustomerNotifications from '@/pages/customer/notifications';
 import CustomerProfile from '@/pages/customer/profile';
+import CustomerReservations from '@/pages/customer/reservations';
 import CustomerServices from '@/pages/customer/services';
 import CustomerSettings from '@/pages/customer/settings';
 import CustomerShop from '@/pages/customer/shop';
@@ -162,6 +163,7 @@ export default function App() {
                 <Route path="/customer" element={<CustomerDashboard />} />
                 <Route path="/customer/services" element={<CustomerServices />} />
                 <Route path="/customer/my-services" element={<MyServices />} />
+                <Route path="/customer/reservations" element={<CustomerReservations />} />
                 <Route path="/customer/shop" element={<CustomerShop />} />
                 <Route path="/customer/billing" element={<BillingPayment />} />
                 <Route path="/customer/profile" element={<CustomerProfile />} />

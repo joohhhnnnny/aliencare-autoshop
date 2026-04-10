@@ -26,10 +26,18 @@ class JobOrderResource extends JsonResource
             'invoice_id' => $this->invoice_id,
             'approved_at' => $this->approved_at?->toISOString(),
             'notes' => $this->notes,
+            'arrival_date' => $this->arrival_date?->format('Y-m-d'),
+            'arrival_time' => $this->arrival_time,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
 
             // Relationships
+            'service' => $this->when($this->relationLoaded('service') && $this->service, function () {
+                return [
+                    'id'   => $this->service->id,
+                    'name' => $this->service->name,
+                ];
+            }),
             'customer' => new CustomerResource($this->whenLoaded('customer')),
             'vehicle' => new VehicleResource($this->whenLoaded('vehicle')),
             'mechanic' => $this->when($this->relationLoaded('mechanic') && $this->mechanic, function () {
