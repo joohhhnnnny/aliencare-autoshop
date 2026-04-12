@@ -90,12 +90,27 @@ class CustomerService {
         return api.get<ApiResponse<PaginatedResponse<CustomerTransaction>>>(`/v1/customers/${customerId}/transactions`, params);
     }
 
+    async getMyTransactions(filters: CustomerTransactionFilters = {}): Promise<ApiResponse<PaginatedResponse<CustomerTransaction>>> {
+        const params: Record<string, string | number> = {};
+
+        if (filters.type) params.type = filters.type;
+        if (filters.search) params.search = filters.search;
+        if (filters.per_page) params.per_page = filters.per_page;
+        if (filters.page) params.page = filters.page;
+
+        return api.get<ApiResponse<PaginatedResponse<CustomerTransaction>>>('/v1/customer/transactions', params);
+    }
+
     async getVehicles(customerId: number): Promise<ApiResponse<Vehicle[]>> {
         return api.get<ApiResponse<Vehicle[]>>(`/v1/customers/${customerId}/vehicles`);
     }
 
     async getJobOrders(customerId: number): Promise<ApiResponse<JobOrder[]>> {
         return api.get<ApiResponse<JobOrder[]>>(`/v1/customers/${customerId}/job-orders`);
+    }
+
+    async getMyJobOrders(): Promise<ApiResponse<JobOrder[]>> {
+        return api.get<ApiResponse<JobOrder[]>>('/v1/customer/job-orders');
     }
 
     async createBooking(data: CreateBookingData): Promise<ApiResponse<JobOrder>> {

@@ -267,6 +267,8 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
 
     Route::prefix('customer')->name('customer.')->group(function () {
         Route::get('/availability', [CustomerBookingController::class, 'availability'])->name('availability');
+        Route::get('/transactions', [CustomerController::class, 'myTransactions'])->name('transactions');
+        Route::get('/job-orders', [CustomerController::class, 'myJobOrders'])->name('job-orders');
         Route::post('/book', [CustomerBookingController::class, 'store'])->name('book');
         Route::post('/book-with-payment', [CustomerBookingController::class, 'storeWithPayment'])->name('book-with-payment');
     });

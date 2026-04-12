@@ -3,23 +3,20 @@
  * Fetches job orders linked to the authenticated customer
  */
 
-import { useAuth } from '@/context/AuthContext';
 import { customerService } from '@/services/customerService';
 import { JobOrder } from '@/types/customer';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useCustomerJobOrders() {
-    const { user } = useAuth();
     const [jobOrders, setJobOrders] = useState<JobOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchJobOrders = useCallback(async () => {
-        if (!user?.id) return;
         try {
             setLoading(true);
             setError(null);
-            const response = await customerService.getJobOrders(user.id);
+            const response = await customerService.getMyJobOrders();
             const data = (response?.data ?? []) as JobOrder[];
             setJobOrders(data);
         } catch (err) {
@@ -27,7 +24,7 @@ export function useCustomerJobOrders() {
         } finally {
             setLoading(false);
         }
-    }, [user?.id]);
+    }, []);
 
     useEffect(() => {
         fetchJobOrders();

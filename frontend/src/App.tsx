@@ -36,6 +36,7 @@ import Profile from '@/pages/settings/profile';
 
 // Admin pages
 import AdminDashboard from '@/pages/admin/dashboard';
+import AdminBookingSlots from '@/pages/admin/booking-slots';
 import FrontDeskAccounts from '@/pages/admin/frontdesk-accounts';
 import AdminProfile from '@/pages/admin/profile';
 
@@ -150,6 +151,7 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/profile" element={<AdminProfile />} />
                 <Route path="/admin/frontdesk-accounts" element={<FrontDeskAccounts />} />
+                <Route path="/admin/booking-slots" element={<AdminBookingSlots />} />
             </Route>
 
             {/* Customer protected routes */}

@@ -1,5 +1,5 @@
 import { type NavItem } from '@/types';
-import { Home, Users } from 'lucide-react';
+import { CalendarClock, Home, Users } from 'lucide-react';
 import { AppSharedSidebar } from './app-shared-sidebar';
 
 const mainNavItems: NavItem[] = [
@@ -12,6 +12,11 @@ const mainNavItems: NavItem[] = [
         title: 'Front Desk Accounts',
         href: '/admin/frontdesk-accounts',
         icon: Users,
+    },
+    {
+        title: 'Booking Slots',
+        href: '/admin/booking-slots',
+        icon: CalendarClock,
     },
 ];
 
