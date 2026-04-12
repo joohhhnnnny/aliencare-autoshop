@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\UserRole;
 use App\Contracts\Repositories\CustomerRepositoryInterface;
 use App\Contracts\Services\CustomerServiceInterface;
 use App\Http\Controllers\Controller;
@@ -14,6 +15,7 @@ use App\Http\Requests\Api\Customer\StoreCustomerRequest;
 use App\Http\Requests\Api\Customer\UpdateCustomerRequest;
 use App\Http\Requests\Api\Customer\UpdatePersonalInfoRequest;
 use App\Http\Resources\CustomerAuditLogResource;
+use App\Http\Resources\JobOrderResource;
 use App\Http\Resources\CustomerResource;
 use App\Http\Resources\CustomerTransactionResource;
 use App\Http\Resources\VehicleResource;
@@ -30,7 +32,7 @@ class CustomerController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $customer = Customer::where('email', $request->user()->email)->with('vehicles')->first();
+        $customer = $this->resolveAuthenticatedCustomer($request);
 
         if (! $customer) {
             return response()->json([
@@ -38,6 +40,8 @@ class CustomerController extends Controller
                 'message' => 'No customer record linked to this account.',
             ], 404);
         }
+
+        $customer->load('vehicles');
 
         return response()->json([
             'success' => true,
@@ -288,12 +292,50 @@ class CustomerController extends Controller
     public function transactions(Request $request, int $id): JsonResponse
     {
         try {
+            if ($response = $this->ensureCustomerOwnsId($request, $id)) {
+                return $response;
+            }
+
             $filters = array_filter([
                 'type' => $request->input('type'),
             ], fn ($value) => $value !== null);
 
             $transactions = $this->customerService->getTransactions(
                 $id,
+                $filters,
+                (int) $request->get('per_page', 15),
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => CustomerTransactionResource::collection($transactions)->response()->getData(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve transactions: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function myTransactions(Request $request): JsonResponse
+    {
+        try {
+            $customer = $this->resolveAuthenticatedCustomer($request);
+
+            if (! $customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No customer record linked to this account.',
+                ], 404);
+            }
+
+            $filters = array_filter([
+                'type' => $request->input('type'),
+            ], fn ($value) => $value !== null);
+
+            $transactions = $this->customerService->getTransactions(
+                $customer->id,
                 $filters,
                 (int) $request->get('per_page', 15),
             );
@@ -330,9 +372,13 @@ class CustomerController extends Controller
         }
     }
 
-    public function vehicles(int $id): JsonResponse
+    public function vehicles(Request $request, int $id): JsonResponse
     {
         try {
+            if ($response = $this->ensureCustomerOwnsId($request, $id)) {
+                return $response;
+            }
+
             $customer = $this->customerRepository->findByIdOrFail($id);
 
             return response()->json([
@@ -347,9 +393,13 @@ class CustomerController extends Controller
         }
     }
 
-    public function jobOrders(int $id): JsonResponse
+    public function jobOrders(Request $request, int $id): JsonResponse
     {
         try {
+            if ($response = $this->ensureCustomerOwnsId($request, $id)) {
+                return $response;
+            }
+
             $customer = $this->customerRepository->findByIdOrFail($id);
 
             return response()->json([
@@ -362,5 +412,73 @@ class CustomerController extends Controller
                 'message' => 'Customer not found.',
             ], 404);
         }
+    }
+
+    public function myJobOrders(Request $request): JsonResponse
+    {
+        try {
+            $customer = $this->resolveAuthenticatedCustomer($request);
+
+            if (! $customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No customer record linked to this account.',
+                ], 404);
+            }
+
+            $jobOrders = $customer->jobOrders()
+                ->with(['vehicle', 'mechanic.user', 'bay', 'service'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => JobOrderResource::collection($jobOrders),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve job orders: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    private function resolveAuthenticatedCustomer(Request $request): ?Customer
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return null;
+        }
+
+        return Customer::where('email', $user->email)->first();
+    }
+
+    private function ensureCustomerOwnsId(Request $request, int $customerId): ?JsonResponse
+    {
+        $role = $request->user()?->role;
+        $isCustomerRole = $role === UserRole::Customer || $role === UserRole::Customer->value;
+
+        if (! $isCustomerRole) {
+            return null;
+        }
+
+        $customer = $this->resolveAuthenticatedCustomer($request);
+
+        if (! $customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No customer record linked to this account.',
+            ], 404);
+        }
+
+        if ($customer->id !== $customerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to access this customer.',
+            ], 403);
+        }
+
+        return null;
     }
 }

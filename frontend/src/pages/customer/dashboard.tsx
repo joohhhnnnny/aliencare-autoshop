@@ -7,6 +7,52 @@ import { type BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/customer' }];
 
+const STATUS_TOKEN_COLORS = {
+    gray: '#6b7280',
+    yellow: '#eab308',
+    blue: '#3b82f6',
+    orange: '#f97316',
+    green: '#22c55e',
+    emerald: '#10b981',
+    red: '#ef4444',
+} as const;
+
+const STATUS_META = {
+    created: { label: 'Created', color: STATUS_TOKEN_COLORS.gray },
+    pending_approval: { label: 'Pending Approval', color: STATUS_TOKEN_COLORS.yellow },
+    approved: { label: 'Approved', color: STATUS_TOKEN_COLORS.blue },
+    in_progress: { label: 'In Progress', color: STATUS_TOKEN_COLORS.orange },
+    completed: { label: 'Completed', color: STATUS_TOKEN_COLORS.green },
+    settled: { label: 'Settled', color: STATUS_TOKEN_COLORS.emerald },
+    cancelled: { label: 'Cancelled', color: STATUS_TOKEN_COLORS.red },
+} as const;
+
+function resolveStatusColor(statusColor: string | undefined, fallback: string): string {
+    if (!statusColor) {
+        return fallback;
+    }
+
+    if (statusColor.startsWith('#')) {
+        return statusColor;
+    }
+
+    const mappedColor = STATUS_TOKEN_COLORS[statusColor.toLowerCase() as keyof typeof STATUS_TOKEN_COLORS];
+
+    return mappedColor ?? fallback;
+}
+
+function getStatusMeta(status: string, statusLabel: string, statusColor: string): { label: string; color: string } {
+    const fallback = STATUS_META[status as keyof typeof STATUS_META] ?? {
+        label: status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+        color: STATUS_TOKEN_COLORS.gray,
+    };
+
+    return {
+        label: statusLabel || fallback.label,
+        color: resolveStatusColor(statusColor, fallback.color),
+    };
+}
+
 export default function CustomerDashboard() {
     const { user } = useAuth();
     const { customer, loading: profileLoading } = useCustomerProfile();
@@ -113,22 +159,26 @@ export default function CustomerDashboard() {
                             </div>
                         ) : (
                             <ul className="divide-y divide-border">
-                                {activeJobOrders.slice(0, 3).map((jo) => (
-                                    <li key={jo.id} className="flex items-center justify-between py-3">
-                                        <div>
-                                            <p className="text-sm font-medium">{jo.jo_number}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {jo.vehicle ? `${jo.vehicle.make} ${jo.vehicle.model}` : 'Vehicle'} — {jo.status_label}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className="rounded-full px-2 py-0.5 text-xs font-medium"
-                                            style={{ backgroundColor: `${jo.status_color}20`, color: jo.status_color }}
-                                        >
-                                            {jo.status_label}
-                                        </span>
-                                    </li>
-                                ))}
+                                {activeJobOrders.slice(0, 3).map((jo) => {
+                                    const statusMeta = getStatusMeta(jo.status, jo.status_label, jo.status_color);
+
+                                    return (
+                                        <li key={jo.id} className="flex items-center justify-between py-3">
+                                            <div>
+                                                <p className="text-sm font-medium">{jo.jo_number}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {jo.vehicle ? `${jo.vehicle.make} ${jo.vehicle.model}` : 'Vehicle'} — {statusMeta.label}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className="rounded-full px-2 py-0.5 text-xs font-medium"
+                                                style={{ backgroundColor: `${statusMeta.color}20`, color: statusMeta.color }}
+                                            >
+                                                {statusMeta.label}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
                                 {pendingItems.slice(0, 2).map((tx) => (
                                     <li key={tx.id} className="flex items-center justify-between py-3">
                                         <div>

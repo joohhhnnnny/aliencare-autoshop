@@ -19,10 +19,13 @@ use App\Models\JobOrderItem;
 use App\Models\ServiceCatalog;
 use App\Services\XenditService;
 use Carbon\Carbon;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class CustomerBookingController extends Controller
 {
@@ -134,31 +137,30 @@ class CustomerBookingController extends Controller
             ], 422);
         }
 
-        $slotSetting = BookingSlot::query()
-            ->active()
-            ->where('time', $arrivalTime)
-            ->first();
-
-        if (! $slotSetting) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected arrival slot is unavailable.',
-            ], 422);
-        }
-
-        if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected arrival slot is full. Please choose another time.',
-            ], 422);
-        }
-
         $validated = $request->validated();
 
         try {
-            $jobOrder = DB::transaction(function () use ($customer, $service, $validated) {
-                return $this->createPendingJobOrder($customer, $service, $validated)
-                    ->fresh(['customer', 'vehicle', 'service', 'items']);
+            $jobOrder = $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
+                return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
+                    $slotSetting = BookingSlot::query()
+                        ->active()
+                        ->where('time', $arrivalTime)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $slotSetting) {
+                        throw new HttpException(422, 'Selected arrival slot is unavailable.');
+                    }
+
+                    if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
+                        throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
+                    }
+
+                    $bookingPayload = $this->withReservationHoldExpiry($validated, false);
+
+                    return $this->createPendingJobOrder($customer, $service, $bookingPayload)
+                        ->fresh(['customer', 'vehicle', 'service', 'items']);
+                });
             });
 
             return response()->json([
@@ -166,7 +168,17 @@ class CustomerBookingController extends Controller
                 'data' => new JobOrderResource($jobOrder),
                 'message' => 'Booking submitted. Awaiting shop approval.',
             ], 201);
-        } catch (\Exception $e) {
+        } catch (LockTimeoutException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking is being updated by another request. Please retry.',
+            ], 409);
+        } catch (HttpException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], $e->getStatusCode());
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create booking: '.$e->getMessage(),
@@ -218,49 +230,48 @@ class CustomerBookingController extends Controller
             ], 422);
         }
 
-        $slotSetting = BookingSlot::query()
-            ->active()
-            ->where('time', $arrivalTime)
-            ->first();
-
-        if (! $slotSetting) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected arrival slot is unavailable.',
-            ], 422);
-        }
-
-        if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected arrival slot is full. Please choose another time.',
-            ], 422);
-        }
-
         $validated = $request->validated();
         $reservationFeeAmount = (float) config('inventory.booking_reservation_fee_amount', 200);
 
         try {
-            $result = DB::transaction(function () use ($customer, $service, $validated, $reservationFeeAmount, $xenditService) {
-                $jobOrder = $this->createPendingJobOrder($customer, $service, $validated)
-                    ->fresh(['customer', 'vehicle', 'service', 'items']);
+            $result = $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
+                return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
+                    $slotSetting = BookingSlot::query()
+                        ->active()
+                        ->where('time', $arrivalTime)
+                        ->lockForUpdate()
+                        ->first();
 
-                $transaction = CustomerTransaction::create([
-                    'customer_id' => $customer->id,
-                    'job_order_id' => $jobOrder->id,
-                    'type' => CustomerTransactionType::Invoice,
-                    'amount' => $reservationFeeAmount,
-                    'notes' => 'Reservation fee for booking '.$jobOrder->jo_number,
-                    'payment_method' => $validated['payment_method'],
-                ]);
+                    if (! $slotSetting) {
+                        throw new HttpException(422, 'Selected arrival slot is unavailable.');
+                    }
 
-                $paymentUrl = $xenditService->createInvoice($transaction, $customer);
+                    if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
+                        throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
+                    }
 
-                return [
-                    'job_order' => $jobOrder,
-                    'transaction_id' => $transaction->id,
-                    'payment_url' => $paymentUrl,
-                ];
+                    $bookingPayload = $this->withReservationHoldExpiry($validated, true);
+
+                    $jobOrder = $this->createPendingJobOrder($customer, $service, $bookingPayload)
+                        ->fresh(['customer', 'vehicle', 'service', 'items']);
+
+                    $transaction = CustomerTransaction::create([
+                        'customer_id' => $customer->id,
+                        'job_order_id' => $jobOrder->id,
+                        'type' => CustomerTransactionType::Invoice,
+                        'amount' => $reservationFeeAmount,
+                        'notes' => 'Reservation fee for booking '.$jobOrder->jo_number,
+                        'payment_method' => $validated['payment_method'],
+                    ]);
+
+                    $paymentUrl = $xenditService->createInvoice($transaction, $customer);
+
+                    return [
+                        'job_order' => $jobOrder,
+                        'transaction_id' => $transaction->id,
+                        'payment_url' => $paymentUrl,
+                    ];
+                });
             });
 
             return response()->json([
@@ -274,7 +285,17 @@ class CustomerBookingController extends Controller
                 ],
                 'message' => 'Booking created. Continue payment to secure your slot.',
             ], 201);
-        } catch (\Exception $e) {
+        } catch (LockTimeoutException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking is being updated by another request. Please retry.',
+            ], 409);
+        } catch (HttpException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], $e->getStatusCode());
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to initialize booking payment: '.$e->getMessage(),
@@ -308,25 +329,60 @@ class CustomerBookingController extends Controller
                     JobOrderStatus::Completed->value,
                     JobOrderStatus::Settled->value,
                 ])
-                ->orWhere(function (Builder $awaitingPayment): void {
-                    $awaitingPayment
+                ->orWhere(function (Builder $awaitingSettlementOrApproval): void {
+                    $awaitingSettlementOrApproval
                         ->whereIn('status', [
                             JobOrderStatus::Created->value,
                             JobOrderStatus::PendingApproval->value,
                         ])
-                        ->whereExists(function ($transactionQuery): void {
-                            $transactionQuery
-                                ->select(DB::raw('1'))
-                                ->from('customer_transactions')
-                                ->whereColumn('customer_transactions.job_order_id', 'job_orders.id')
-                                ->whereIn('customer_transactions.type', [
-                                    CustomerTransactionType::Invoice->value,
-                                    CustomerTransactionType::ReservationFee->value,
-                                ])
-                                ->where('customer_transactions.xendit_status', 'PAID');
+                        ->where(function (Builder $pendingHold): void {
+                            $pendingHold
+                                ->whereNull('reservation_expires_at')
+                                ->orWhere('reservation_expires_at', '>', now())
+                                ->orWhereExists(function ($transactionQuery): void {
+                                    $transactionQuery
+                                        ->select(DB::raw('1'))
+                                        ->from('customer_transactions')
+                                        ->whereColumn('customer_transactions.job_order_id', 'job_orders.id')
+                                        ->whereIn('customer_transactions.type', [
+                                            CustomerTransactionType::Invoice->value,
+                                            CustomerTransactionType::ReservationFee->value,
+                                        ])
+                                        ->where('customer_transactions.xendit_status', 'PAID');
+                                });
                         });
                 });
         });
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable():T  $callback
+     * @return T
+     */
+    private function withSlotBookingLock(string $arrivalDate, string $arrivalTime, callable $callback): mixed
+    {
+        $lockSeconds = max((int) config('inventory.booking_slot_lock_seconds', 10), 1);
+        $waitSeconds = max((int) config('inventory.booking_slot_lock_wait_seconds', 5), 1);
+        $lockKey = sprintf('booking-slot:%s:%s', $arrivalDate, $arrivalTime);
+
+        return Cache::lock($lockKey, $lockSeconds)->block($waitSeconds, $callback);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function withReservationHoldExpiry(array $validated, bool $isPaymentFlow): array
+    {
+        $configKey = $isPaymentFlow ? 'inventory.booking_paid_hold_minutes' : 'inventory.booking_unpaid_hold_minutes';
+        $defaultMinutes = $isPaymentFlow ? 1440 : 60;
+        $holdMinutes = max((int) config($configKey, $defaultMinutes), 1);
+
+        $validated['reservation_expires_at'] = now()->addMinutes($holdMinutes);
+
+        return $validated;
     }
 
     /**
@@ -340,6 +396,7 @@ class CustomerBookingController extends Controller
             'service_id' => $service->id,
             'arrival_date' => $validated['arrival_date'],
             'arrival_time' => $validated['arrival_time'],
+            'reservation_expires_at' => $validated['reservation_expires_at'] ?? null,
             'status' => JobOrderStatus::PendingApproval,
             'service_fee' => $service->price_fixed,
             'notes' => $validated['notes'] ?? null,

@@ -106,6 +106,7 @@ class CustomerBookingApiTest extends TestCase
             'status' => 'pending_approval',
             'arrival_date' => $date,
             'arrival_time' => '10:00',
+            'reservation_expires_at' => now()->subMinute(),
         ]);
         JobOrder::factory()->create([
             'customer_id' => $this->customer->id,
@@ -186,7 +187,7 @@ class CustomerBookingApiTest extends TestCase
             ->assertJsonPath('message', 'Selected arrival slot is full. Please choose another time.');
     }
 
-    public function test_store_allows_booking_when_existing_pending_booking_is_unpaid(): void
+    public function test_store_rejects_booking_when_existing_pending_booking_hold_is_active(): void
     {
         BookingSlot::query()->where('time', '10:00')->update(['capacity' => 1]);
         $date = now()->addDay()->toDateString();
@@ -197,6 +198,34 @@ class CustomerBookingApiTest extends TestCase
             'status' => 'pending_approval',
             'arrival_date' => $date,
             'arrival_time' => '10:00',
+            'reservation_expires_at' => now()->addMinutes(15),
+        ]);
+
+        $payload = [
+            'vehicle_id' => $this->vehicle->id,
+            'service_id' => $this->service->id,
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+        ];
+
+        $this->actingAs($this->user)
+            ->postJson('/api/v1/customer/book', $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Selected arrival slot is full. Please choose another time.');
+    }
+
+    public function test_store_allows_booking_when_existing_pending_booking_hold_has_expired(): void
+    {
+        BookingSlot::query()->where('time', '10:00')->update(['capacity' => 1]);
+        $date = now()->addDay()->toDateString();
+
+        JobOrder::factory()->create([
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'status' => 'pending_approval',
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+            'reservation_expires_at' => now()->subMinute(),
         ]);
 
         $payload = [
@@ -242,6 +271,11 @@ class CustomerBookingApiTest extends TestCase
             'arrival_date' => $date,
             'arrival_time' => '10:00',
         ]);
+
+        $created = JobOrder::query()->latest('id')->first();
+
+        $this->assertNotNull($created?->reservation_expires_at);
+        $this->assertTrue($created?->reservation_expires_at?->isFuture() ?? false);
     }
 
     public function test_store_with_payment_creates_booking_transaction_and_payment_url(): void

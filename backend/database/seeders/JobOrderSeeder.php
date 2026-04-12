@@ -17,20 +17,50 @@ class JobOrderSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create bays
+        // Keep baseline bays deterministic so db:seed can be rerun safely.
         $bays = collect([
-            Bay::factory()->create(['name' => 'Bay 1']),
-            Bay::factory()->create(['name' => 'Bay 2']),
-            Bay::factory()->create(['name' => 'Bay 3']),
-            Bay::factory()->maintenance()->create(['name' => 'Bay 4']),
-        ]);
+            'Bay 1' => ['status' => 'available'],
+            'Bay 2' => ['status' => 'available'],
+            'Bay 3' => ['status' => 'available'],
+            'Bay 4' => ['status' => 'maintenance'],
+        ])->map(fn (array $attributes, string $name): Bay => Bay::updateOrCreate(['name' => $name], $attributes));
 
-        // Create mechanics with user accounts
+        // Keep mechanic accounts deterministic to avoid unique email collisions on reruns.
         $mechanics = collect([
-            Mechanic::factory()->create(['user_id' => User::factory()->create(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com'])->id, 'specialization' => 'Engine']),
-            Mechanic::factory()->create(['user_id' => User::factory()->create(['name' => 'Pedro Santos', 'email' => 'pedro@example.com'])->id, 'specialization' => 'Transmission']),
-            Mechanic::factory()->create(['user_id' => User::factory()->create(['name' => 'Maria Garcia', 'email' => 'maria@example.com'])->id, 'specialization' => 'Electrical']),
-        ]);
+            [
+                'name' => 'Juan Dela Cruz',
+                'email' => 'juan@example.com',
+                'specialization' => 'Engine',
+            ],
+            [
+                'name' => 'Pedro Santos',
+                'email' => 'pedro@example.com',
+                'specialization' => 'Transmission',
+            ],
+            [
+                'name' => 'Maria Garcia',
+                'email' => 'maria@example.com',
+                'specialization' => 'Electrical',
+            ],
+        ])->mapWithKeys(function (array $mechanicData): array {
+            $user = User::updateOrCreate(
+                ['email' => $mechanicData['email']],
+                [
+                    'name' => $mechanicData['name'],
+                    'password' => 'AlienCare123!',
+                ],
+            );
+
+            $mechanic = Mechanic::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'specialization' => $mechanicData['specialization'],
+                    'availability_status' => 'available',
+                ],
+            );
+
+            return [$mechanicData['email'] => $mechanic];
+        });
 
         // Create customers with vehicles
         $customers = Customer::factory(5)->create()->each(function (Customer $customer) {
@@ -58,11 +88,11 @@ class JobOrderSeeder extends Seeder
             'customer_id' => $customers->random()->id,
             'vehicle_id' => fn () => Vehicle::inRandomOrder()->first()->id,
             'approved_by' => $approver->id,
-            'assigned_mechanic_id' => $mechanics[0]->id,
-            'bay_id' => $bays[0]->id,
+            'assigned_mechanic_id' => $mechanics['juan@example.com']->id,
+            'bay_id' => $bays['Bay 1']->id,
         ]);
-        $bays[0]->update(['status' => 'occupied']);
-        $mechanics[0]->update(['availability_status' => 'busy']);
+        $bays['Bay 1']->update(['status' => 'occupied']);
+        $mechanics['juan@example.com']->update(['availability_status' => 'busy']);
         JobOrderItem::factory(3)->create(['job_order_id' => $inProgressJo->id]);
 
         // Completed JOs
@@ -70,7 +100,7 @@ class JobOrderSeeder extends Seeder
             'customer_id' => $customers->random()->id,
             'vehicle_id' => fn () => Vehicle::inRandomOrder()->first()->id,
             'approved_by' => $approver->id,
-            'assigned_mechanic_id' => $mechanics[1]->id,
+            'assigned_mechanic_id' => $mechanics['pedro@example.com']->id,
         ])->each(fn (JobOrder $jo) => JobOrderItem::factory(rand(2, 4))->create(['job_order_id' => $jo->id]));
 
         // Settled JOs
@@ -78,7 +108,7 @@ class JobOrderSeeder extends Seeder
             'customer_id' => $customers->random()->id,
             'vehicle_id' => fn () => Vehicle::inRandomOrder()->first()->id,
             'approved_by' => $approver->id,
-            'assigned_mechanic_id' => $mechanics[2]->id,
+            'assigned_mechanic_id' => $mechanics['maria@example.com']->id,
         ])->each(fn (JobOrder $jo) => JobOrderItem::factory(rand(2, 4))->create(['job_order_id' => $jo->id]));
 
         // Cancelled JO

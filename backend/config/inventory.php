@@ -49,6 +49,18 @@ return [
     // Fixed reservation fee (PHP) for customer service bookings paid online.
     'booking_reservation_fee_amount' => (float) env('BOOKING_RESERVATION_FEE_AMOUNT', 200),
 
+    // Minutes a no-payment booking reserves slot capacity before auto-expiry.
+    'booking_unpaid_hold_minutes' => (int) env('BOOKING_UNPAID_HOLD_MINUTES', 60),
+
+    // Minutes a payment-initiated booking reserves slot capacity while awaiting settlement.
+    'booking_paid_hold_minutes' => (int) env('BOOKING_PAID_HOLD_MINUTES', 1440),
+
+    // Distributed lock timeout (seconds) when serializing bookings per date+time slot.
+    'booking_slot_lock_seconds' => (int) env('BOOKING_SLOT_LOCK_SECONDS', 10),
+
+    // Maximum wait time (seconds) to acquire a slot lock before returning a conflict.
+    'booking_slot_lock_wait_seconds' => (int) env('BOOKING_SLOT_LOCK_WAIT_SECONDS', 5),
+
     /*
     |--------------------------------------------------------------------------
     | Pagination Settings

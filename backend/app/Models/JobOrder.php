@@ -22,6 +22,7 @@ class JobOrder extends Model
         'service_id',
         'arrival_date',
         'arrival_time',
+        'reservation_expires_at',
         'status',
         'assigned_mechanic_id',
         'bay_id',
@@ -41,6 +42,7 @@ class JobOrder extends Model
             'settled_flag' => 'boolean',
             'approved_at' => 'datetime',
             'arrival_date' => 'date:Y-m-d',
+            'reservation_expires_at' => 'datetime',
         ];
     }
 
@@ -123,6 +125,11 @@ class JobOrder extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function customerTransactions(): HasMany
+    {
+        return $this->hasMany(CustomerTransaction::class);
     }
 
     public function scopeByStatus($query, JobOrderStatus $status)

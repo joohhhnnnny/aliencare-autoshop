@@ -1,10 +1,11 @@
 import CustomerLayout from '@/components/layout/customer-layout';
 import { useCustomerProfile } from '@/hooks/useCustomerProfile';
+import { ApiError } from '@/services/api';
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { customerService } from '@/services/customerService';
 import { BookingTimeSlot, JobOrder, ServiceCatalogItem, Vehicle } from '@/types/customer';
 import { AlertTriangle, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Loader2, Star, Users, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ── types ─────────────────────────────────────────────────────────────────────
 type Category = 'Maintenance' | 'Cleaning' | 'Repair';
@@ -14,13 +15,6 @@ const categoryMap: Record<string, Category> = {
     cleaning: 'Cleaning',
     repair: 'Repair',
 };
-
-const FALLBACK_TIME_SLOTS: BookingTimeSlot[] = [
-    { time: '10:00', label: '10:00 AM', status: 'available', slots_left: 1, capacity: 1, booked: 0 },
-    { time: '11:00', label: '11:00 AM', status: 'full', slots_left: 0, capacity: 1, booked: 1 },
-    { time: '12:00', label: '12:00 PM', status: 'available', slots_left: 2, capacity: 2, booked: 0 },
-    { time: '12:30', label: '12:30 PM', status: 'available', slots_left: 4, capacity: 4, booked: 0 },
-];
 
 const CATEGORIES: Category[] = ['Maintenance', 'Cleaning', 'Repair'];
 
@@ -219,6 +213,7 @@ type ModalStep = 'confirm' | 'secure' | 'payment' | 'verify-phone' | 'verify-otp
 type SecureOption = 'reservation' | 'no-payment';
 
 const DEFAULT_PAYMENT_METHOD = 'gcash' as const;
+const SLOT_POLL_INTERVAL_MS = 8000;
 
 export default function CustomerServices() {
     const [activeCategory, setActiveCategory] = useState<Category>('Maintenance');
@@ -234,10 +229,11 @@ export default function CustomerServices() {
         d.setHours(0, 0, 0, 0);
         return d;
     });
-    const [timeSlots, setTimeSlots] = useState<BookingTimeSlot[]>(FALLBACK_TIME_SLOTS);
+    const [timeSlots, setTimeSlots] = useState<BookingTimeSlot[]>([]);
     const [selectedTimeIdx, setSelectedTimeIdx] = useState(0);
     const [slotsLoading, setSlotsLoading] = useState(false);
     const [slotsError, setSlotsError] = useState<string | null>(null);
+    const [slotsLastUpdatedAt, setSlotsLastUpdatedAt] = useState<Date | null>(null);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [bookingError, setBookingError] = useState<string | null>(null);
@@ -248,26 +244,21 @@ export default function CustomerServices() {
     const { services, recommended, loading, error } = useServiceCatalog({ per_page: 50 });
     const { customer } = useCustomerProfile();
 
-    const vehicles: Vehicle[] = customer?.vehicles ?? [];
+    const vehicles: Vehicle[] = useMemo(() => customer?.vehicles ?? [], [customer?.vehicles]);
     const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId) ?? vehicles[0] ?? null;
     const arrivalDateYmd = useMemo(() => formatDateYmd(selectedDate), [selectedDate]);
 
-    // Fetch arrival slot availability from backend whenever the selected date changes.
-    useEffect(() => {
-        let cancelled = false;
-
-        const fetchAvailability = async () => {
-            setSlotsLoading(true);
+    const fetchAvailability = useCallback(
+        async ({ showLoader = true }: { showLoader?: boolean } = {}) => {
+            if (showLoader) setSlotsLoading(true);
             setSlotsError(null);
 
             try {
                 const response = await customerService.getBookingAvailability(arrivalDateYmd);
-                const fetchedSlots = response.data?.slots ?? [];
-                const nextSlots = fetchedSlots.length > 0 ? fetchedSlots : FALLBACK_TIME_SLOTS;
-
-                if (cancelled) return;
+                const nextSlots = response.data?.slots ?? [];
 
                 setTimeSlots(nextSlots);
+                setSlotsLastUpdatedAt(new Date());
                 setSelectedTimeIdx((prev) => {
                     if (nextSlots.length === 0) return 0;
                     if (prev < nextSlots.length && nextSlots[prev].status !== 'full') return prev;
@@ -276,22 +267,32 @@ export default function CustomerServices() {
                     return firstAvailableIdx >= 0 ? firstAvailableIdx : 0;
                 });
             } catch (err) {
-                if (cancelled) return;
-
                 setSlotsError(err instanceof Error ? err.message : 'Failed to load arrival times.');
-                setTimeSlots(FALLBACK_TIME_SLOTS);
-                setSelectedTimeIdx((prev) => Math.min(prev, FALLBACK_TIME_SLOTS.length - 1));
+                setTimeSlots([]);
+                setSelectedTimeIdx(0);
             } finally {
-                if (!cancelled) setSlotsLoading(false);
+                if (showLoader) setSlotsLoading(false);
             }
-        };
+        },
+        [arrivalDateYmd]
+    );
 
-        fetchAvailability();
+    // Fetch arrival slot availability from backend whenever the selected date changes.
+    useEffect(() => {
+        void fetchAvailability();
+    }, [fetchAvailability]);
+
+    // Keep slot availability fresh for concurrent customer activity.
+    useEffect(() => {
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+            void fetchAvailability({ showLoader: false });
+        }, SLOT_POLL_INTERVAL_MS);
 
         return () => {
-            cancelled = true;
+            window.clearInterval(intervalId);
         };
-    }, [arrivalDateYmd]);
+    }, [fetchAvailability]);
 
     // Auto-select first vehicle when profile loads
     useEffect(() => {
@@ -331,7 +332,7 @@ export default function CustomerServices() {
     async function submitBooking() {
         if (!selectedService || !selectedVehicle || !slot) return;
 
-        if (slot.status === 'full') {
+        if (slot.status === 'full' || slot.slots_left <= 0) {
             setBookingError('Selected arrival slot is full. Please choose another time.');
             return;
         }
@@ -352,8 +353,13 @@ export default function CustomerServices() {
             setConfirmedJO(response.data);
             setModalStep('reserved');
         } catch (err) {
+            const isSlotConflict = err instanceof ApiError && (err.status === 409 || err.status === 422);
+            if (isSlotConflict) {
+                await fetchAvailability();
+            }
+
             const msg = err instanceof Error ? err.message : 'Booking failed. Please try again.';
-            setBookingError(msg);
+            setBookingError(isSlotConflict ? `${msg} Availability has been refreshed.` : msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -362,7 +368,7 @@ export default function CustomerServices() {
     async function submitBookingWithPayment() {
         if (!selectedService || !selectedVehicle || !slot) return;
 
-        if (slot.status === 'full') {
+        if (slot.status === 'full' || slot.slots_left <= 0) {
             setBookingError('Selected arrival slot is full. Please choose another time.');
             return;
         }
@@ -391,8 +397,13 @@ export default function CustomerServices() {
 
             window.location.href = response.data.payment_url;
         } catch (err) {
+            const isSlotConflict = err instanceof ApiError && (err.status === 409 || err.status === 422);
+            if (isSlotConflict) {
+                await fetchAvailability();
+            }
+
             const msg = err instanceof Error ? err.message : 'Failed to initialize payment. Please try again.';
-            setBookingError(msg);
+            setBookingError(isSlotConflict ? `${msg} Availability has been refreshed.` : msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -423,7 +434,7 @@ export default function CustomerServices() {
     // Booking summary times
     const slot = timeSlots[selectedTimeIdx] ?? timeSlots[0] ?? null;
     const slotLabel = slot?.label ?? 'N/A';
-    const slotTime = slot?.time ?? FALLBACK_TIME_SLOTS[0].time;
+    const slotTime = slot?.time ?? '10:00';
     const arrivalStr = `${selectedDate.toLocaleDateString('en-US', { weekday: 'short' })} ${selectedDate.toLocaleDateString('en-US', { month: 'short' })} ${selectedDate.getDate()}, ${slotLabel}`;
 
     const { h, m } = parseTime24h(slotTime);
@@ -658,7 +669,21 @@ export default function CustomerServices() {
 
                     {/* Select arrival time */}
                     <div>
-                        <p className="mb-2 text-xs font-semibold text-foreground">Select arrival time</p>
+                        <div className="mb-2 flex items-center justify-between">
+                            <p className="text-xs font-semibold text-foreground">Select arrival time</p>
+                            <button
+                                onClick={() => void fetchAvailability()}
+                                disabled={slotsLoading}
+                                className="rounded-md border border-[#2a2a2e] px-2 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-[#d4af37]/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                        {slotsLastUpdatedAt && (
+                            <p className="mb-1 text-[10px] text-muted-foreground">
+                                Live updates every {Math.floor(SLOT_POLL_INTERVAL_MS / 1000)}s · Last sync {slotsLastUpdatedAt.toLocaleTimeString('en-US')}
+                            </p>
+                        )}
                         {slotsLoading && (
                             <div className="mb-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 <Loader2 className="h-3 w-3 animate-spin" />
