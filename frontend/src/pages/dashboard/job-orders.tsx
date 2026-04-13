@@ -1,6 +1,6 @@
 import AppLayout from '@/components/layout/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Car, CheckCircle2, Clock3, Plus, Search, ShieldCheck, UserRoundPlus, Wrench } from 'lucide-react';
+import { Car, CheckCircle2, Clock3, Search, ShieldCheck, UserRoundPlus, Wrench } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Job Orders', href: '/job-orders' }];
@@ -171,9 +171,7 @@ export default function JobOrders() {
             if (!statusForSegment(order, segment)) return false;
             if (!normalized) return true;
 
-            const source = [order.joNumber, order.customerName, order.vehicleLabel, order.plateNumber, order.serviceName]
-                .join(' ')
-                .toLowerCase();
+            const source = [order.joNumber, order.customerName, order.vehicleLabel, order.plateNumber, order.serviceName].join(' ').toLowerCase();
 
             return source.includes(normalized);
         });
@@ -345,7 +343,9 @@ export default function JobOrders() {
 
                                 <div className="max-h-140 overflow-y-auto">
                                     {filteredOrders.length === 0 ? (
-                                        <div className="px-5 py-16 text-center text-sm text-muted-foreground">No job orders matched your filters.</div>
+                                        <div className="px-5 py-16 text-center text-sm text-muted-foreground">
+                                            No job orders matched your filters.
+                                        </div>
                                     ) : (
                                         filteredOrders.map((order) => {
                                             const selected = selectedOrder?.id === order.id;
@@ -379,7 +379,9 @@ export default function JobOrders() {
                                                     <div className="mb-2 text-sm text-muted-foreground lg:mb-0">{order.scheduleLabel}</div>
 
                                                     <div className="mb-2 lg:mb-0">
-                                                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusMeta[order.status].className}`}>
+                                                        <span
+                                                            className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusMeta[order.status].className}`}
+                                                        >
                                                             {statusMeta[order.status].label}
                                                         </span>
                                                     </div>
@@ -397,7 +399,9 @@ export default function JobOrders() {
                             {selectedOrder ? (
                                 <div className="flex h-full flex-col gap-4">
                                     <div>
-                                        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{selectedOrder.joNumber}</p>
+                                        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                            {selectedOrder.joNumber}
+                                        </p>
                                         <h2 className="mt-2 text-xl font-bold">{selectedOrder.customerName}</h2>
                                         <p className="mt-1 text-sm text-muted-foreground">{selectedOrder.customerPhone}</p>
                                         <div className="mt-2 inline-flex rounded-full border border-[#2a2a2e] bg-[#0d0d10] px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -408,7 +412,9 @@ export default function JobOrders() {
                                     <div className="rounded-xl border border-[#2a2a2e] bg-[#0d0d10] p-3">
                                         <div className="space-y-2 text-sm">
                                             <div className="flex items-center justify-between text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1"><Car className="h-3.5 w-3.5" /> Vehicle</span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Car className="h-3.5 w-3.5" /> Vehicle
+                                                </span>
                                                 <span className="text-right text-foreground">{selectedOrder.vehicleLabel}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-muted-foreground">
@@ -416,7 +422,9 @@ export default function JobOrders() {
                                                 <span className="text-right text-foreground">{selectedOrder.plateNumber}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1"><Wrench className="h-3.5 w-3.5" /> Service</span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Wrench className="h-3.5 w-3.5" /> Service
+                                                </span>
                                                 <span className="text-right text-foreground">{selectedOrder.serviceName}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-muted-foreground">
@@ -424,7 +432,9 @@ export default function JobOrders() {
                                                 <span className="text-right text-foreground">{selectedOrder.bay}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> Schedule</span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Clock3 className="h-3.5 w-3.5" /> Schedule
+                                                </span>
                                                 <span className="text-right text-foreground">{selectedOrder.scheduleLabel}</span>
                                             </div>
                                         </div>
@@ -455,7 +465,11 @@ export default function JobOrders() {
                                         onClick={advanceStatus}
                                         className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#d4af37] px-4 py-2.5 text-sm font-bold text-black transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
                                     >
-                                        {selectedOrder.status === 'completed' ? <CheckCircle2 className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                                        {selectedOrder.status === 'completed' ? (
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        ) : (
+                                            <ShieldCheck className="h-4 w-4" />
+                                        )}
                                         {getPrimaryActionLabel(selectedOrder.status)}
                                     </button>
                                 </div>
@@ -547,7 +561,10 @@ export default function JobOrders() {
                                 >
                                     Cancel
                                 </button>
-                                <button type="submit" className="rounded-lg bg-[#d4af37] px-4 py-2 text-sm font-bold text-black transition-opacity hover:opacity-90">
+                                <button
+                                    type="submit"
+                                    className="rounded-lg bg-[#d4af37] px-4 py-2 text-sm font-bold text-black transition-opacity hover:opacity-90"
+                                >
                                     Create Job Order
                                 </button>
                             </div>

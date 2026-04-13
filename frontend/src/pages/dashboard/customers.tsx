@@ -163,13 +163,6 @@ function formatPeso(amount: number): string {
     return `P${amount.toLocaleString('en-US')}`;
 }
 
-function toSegmentFilter(tier: CustomerTier): SegmentFilter {
-    if (tier === 'VIP') return 'vip';
-    if (tier === 'Fleet') return 'fleet';
-    if (tier === 'Inactive') return 'inactive';
-    return 'active';
-}
-
 function segmentMatches(customer: CustomerRow, segment: SegmentFilter): boolean {
     if (segment === 'all') return true;
     if (segment === 'active') return customer.status === 'Active';
@@ -205,7 +198,9 @@ function TierChip({ tier }: { tier: CustomerTier }) {
     const tierConfig = config[tier];
 
     return (
-        <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase ${tierConfig.className}`}>
+        <span
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase ${tierConfig.className}`}
+        >
             <span className={`h-1.5 w-1.5 rounded-full ${tierConfig.dot}`} />
             {tierConfig.label}
         </span>
@@ -236,9 +231,7 @@ export default function Customers() {
 
             if (!normalized) return true;
 
-            const searchable = [customer.name, customer.phone, customer.email, customer.primaryVehicle, customer.code]
-                .join(' ')
-                .toLowerCase();
+            const searchable = [customer.name, customer.phone, customer.email, customer.primaryVehicle, customer.code].join(' ').toLowerCase();
 
             return searchable.includes(normalized);
         });
@@ -311,7 +304,9 @@ export default function Customers() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-                            <p className="mt-1 text-sm text-muted-foreground">Manage customer profiles, service activity, and quick frontdesk actions.</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Manage customer profiles, service activity, and quick frontdesk actions.
+                            </p>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
@@ -461,8 +456,10 @@ export default function Customers() {
                                 <div className="flex h-full flex-col gap-4">
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{selectedCustomer.code}</p>
-                                            <h2 className="mt-2 text-2xl font-bold leading-tight">{selectedCustomer.name}</h2>
+                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                {selectedCustomer.code}
+                                            </p>
+                                            <h2 className="mt-2 text-2xl leading-tight font-bold">{selectedCustomer.name}</h2>
                                             <div className="mt-2 flex items-center gap-1.5">
                                                 <TierChip tier={setPrimaryTier(selectedCustomer)} />
                                             </div>
@@ -499,11 +496,15 @@ export default function Customers() {
                                         </div>
                                         <div className="space-y-3 text-sm">
                                             <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase"><Phone className="h-3.5 w-3.5" /> Phone</span>
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase">
+                                                    <Phone className="h-3.5 w-3.5" /> Phone
+                                                </span>
                                                 <span className="text-right text-foreground">{selectedCustomer.phone}</span>
                                             </div>
                                             <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                                                <span className="inline-flex items-center gap-1 text-xs uppercase"><Mail className="h-3.5 w-3.5" /> Email</span>
+                                                <span className="inline-flex items-center gap-1 text-xs uppercase">
+                                                    <Mail className="h-3.5 w-3.5" /> Email
+                                                </span>
                                                 <span className="text-right text-foreground">{selectedCustomer.email}</span>
                                             </div>
                                             <div className="flex items-center justify-between gap-2 text-muted-foreground">
@@ -527,7 +528,10 @@ export default function Customers() {
 
                                         <div className="space-y-2">
                                             {selectedCustomer.vehicles.map((vehicle) => (
-                                                <div key={`${selectedCustomer.id}-${vehicle.plate}`} className="rounded-lg border border-[#23252b] bg-[#111217] p-2.5">
+                                                <div
+                                                    key={`${selectedCustomer.id}-${vehicle.plate}`}
+                                                    className="rounded-lg border border-[#23252b] bg-[#111217] p-2.5"
+                                                >
                                                     <div className="flex items-start justify-between">
                                                         <div>
                                                             <p className="inline-flex items-center gap-1 text-sm font-semibold">
@@ -563,7 +567,11 @@ export default function Customers() {
                                         onClick={handleToggleStatus}
                                         className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#2a2a2e] px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-[#d4af37]/40 hover:text-foreground"
                                     >
-                                        {selectedCustomer.status === 'Active' ? <Crown className="h-4 w-4" /> : <Crown className="h-4 w-4 text-[#d4af37]" />}
+                                        {selectedCustomer.status === 'Active' ? (
+                                            <Crown className="h-4 w-4" />
+                                        ) : (
+                                            <Crown className="h-4 w-4 text-[#d4af37]" />
+                                        )}
                                         Toggle Active Status
                                     </button>
                                 </div>

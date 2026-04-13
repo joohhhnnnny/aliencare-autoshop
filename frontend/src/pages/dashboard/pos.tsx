@@ -428,7 +428,9 @@ export default function PointOfSale() {
 
                                 <div className="max-h-140 overflow-y-auto">
                                     {filteredProducts.length === 0 ? (
-                                        <div className="px-5 py-16 text-center text-sm text-muted-foreground">No products matched your search and filters.</div>
+                                        <div className="px-5 py-16 text-center text-sm text-muted-foreground">
+                                            No products matched your search and filters.
+                                        </div>
                                     ) : (
                                         filteredProducts.map((product) => {
                                             const selected = selectedId === product.id;
@@ -448,9 +450,13 @@ export default function PointOfSale() {
                                                         <p className="text-xs text-muted-foreground">{product.sku}</p>
                                                     </div>
 
-                                                    <div className="mb-2 text-xs text-muted-foreground lg:mb-0">{categoryLabels[product.category]}</div>
+                                                    <div className="mb-2 text-xs text-muted-foreground lg:mb-0">
+                                                        {categoryLabels[product.category]}
+                                                    </div>
 
-                                                    <div className="mb-2 text-sm font-semibold text-[#d4af37] lg:mb-0">{formatPeso(product.unitPrice)}</div>
+                                                    <div className="mb-2 text-sm font-semibold text-[#d4af37] lg:mb-0">
+                                                        {formatPeso(product.unitPrice)}
+                                                    </div>
 
                                                     <div className="mb-2 text-sm lg:mb-0">{product.stock}</div>
 
@@ -650,9 +656,7 @@ export default function PointOfSale() {
                                 />
                                 <select
                                     value={formState.category}
-                                    onChange={(event) =>
-                                        setFormState((prev) => ({ ...prev, category: event.target.value as ProductCategory }))
-                                    }
+                                    onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value as ProductCategory }))}
                                     className="h-10 rounded-lg border border-[#2a2a2e] bg-[#0d0d10] px-3 text-sm focus:border-[#d4af37] focus:outline-none"
                                 >
                                     <option value="parts">Parts</option>

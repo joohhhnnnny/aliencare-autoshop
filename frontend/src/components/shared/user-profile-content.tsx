@@ -116,195 +116,191 @@ export function UserProfileContent() {
             <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 {/* Two-column grid */}
                 <div className="grid gap-4 lg:grid-cols-2">
-                {/* Left column */}
-                <div className="flex flex-col gap-4">
-                    {/* Personal Information */}
-                    <div className="profile-card rounded-xl p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="font-semibold">Personal Information</h3>
-                            {isCustomer ? (
-                                <button
-                                    onClick={() => setPersonalEditOpen(true)}
-                                    aria-label="Edit Personal Information"
-                                    disabled={loading || !customer}
-                                >
-                                    <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70 disabled:opacity-30" />
-                                </button>
-                            ) : (
-                                <button onClick={() => setNonCustomerSection('personal')} aria-label="Edit Personal Information">
-                                    <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="text-muted-foreground">Phone:</span>
-                                <span className="font-medium">{isCustomer ? (loading ? '…' : (customer?.phone_number ?? '—')) : '—'}</span>
-                            </div>
-                            <div className="flex min-w-0 items-center gap-2">
-                                <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="text-muted-foreground">Email:</span>
-                                <span className="truncate font-medium">{user?.email ?? '—'}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="text-muted-foreground">Address:</span>
-                                <span className="font-medium">{isCustomer ? (loading ? '…' : (customer?.address ?? '—')) : '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* My Vehicles — customer only */}
-                    {isCustomer && (
+                    {/* Left column */}
+                    <div className="flex flex-col gap-4">
+                        {/* Personal Information */}
                         <div className="profile-card rounded-xl p-5">
                             <div className="mb-4 flex items-center justify-between">
-                                <h3 className="font-semibold">My Vehicles</h3>
-                            </div>
-                            <div className="space-y-1">
-                                {loading && <p className="text-sm text-muted-foreground">Loading vehicles…</p>}
-                                {!loading && customer?.vehicles.length === 0 && (
-                                    <p className="text-sm text-muted-foreground">No vehicles registered yet.</p>
+                                <h3 className="font-semibold">Personal Information</h3>
+                                {isCustomer ? (
+                                    <button
+                                        onClick={() => setPersonalEditOpen(true)}
+                                        aria-label="Edit Personal Information"
+                                        disabled={loading || !customer}
+                                    >
+                                        <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70 disabled:opacity-30" />
+                                    </button>
+                                ) : (
+                                    <button onClick={() => setNonCustomerSection('personal')} aria-label="Edit Personal Information">
+                                        <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
+                                    </button>
                                 )}
-                                {!loading &&
-                                    customer?.vehicles.map((vehicle) => (
-                                        <div key={vehicle.id} className="flex items-center justify-between rounded-lg py-2">
-                                            <div className="flex items-center gap-3">
-                                                <Car className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                                <div>
-                                                    <p className="text-sm font-medium">
-                                                        {vehicle.make} {vehicle.model}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">{vehicle.plate_number}</p>
+                            </div>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Phone:</span>
+                                    <span className="font-medium">{isCustomer ? (loading ? '…' : (customer?.phone_number ?? '—')) : '—'}</span>
+                                </div>
+                                <div className="flex min-w-0 items-center gap-2">
+                                    <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Email:</span>
+                                    <span className="truncate font-medium">{user?.email ?? '—'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Address:</span>
+                                    <span className="font-medium">{isCustomer ? (loading ? '…' : (customer?.address ?? '—')) : '—'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* My Vehicles — customer only */}
+                        {isCustomer && (
+                            <div className="profile-card rounded-xl p-5">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h3 className="font-semibold">My Vehicles</h3>
+                                </div>
+                                <div className="space-y-1">
+                                    {loading && <p className="text-sm text-muted-foreground">Loading vehicles…</p>}
+                                    {!loading && customer?.vehicles.length === 0 && (
+                                        <p className="text-sm text-muted-foreground">No vehicles registered yet.</p>
+                                    )}
+                                    {!loading &&
+                                        customer?.vehicles.map((vehicle) => (
+                                            <div key={vehicle.id} className="flex items-center justify-between rounded-lg py-2">
+                                                <div className="flex items-center gap-3">
+                                                    <Car className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                                    <div>
+                                                        <p className="text-sm font-medium">
+                                                            {vehicle.make} {vehicle.model}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">{vehicle.plate_number}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setVehicleEditTarget(vehicle)}
+                                                        aria-label={`Edit ${vehicle.make} ${vehicle.model}`}
+                                                    >
+                                                        <SquarePen className="h-3.5 w-3.5 text-[#d4af37] transition-opacity hover:opacity-70" />
+                                                    </button>
+                                                    <button className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+                                                        <History className="h-3 w-3" />
+                                                        <span>Service History</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => setVehicleEditTarget(vehicle)}
-                                                    aria-label={`Edit ${vehicle.make} ${vehicle.model}`}
-                                                >
-                                                    <SquarePen className="h-3.5 w-3.5 text-[#d4af37] transition-opacity hover:opacity-70" />
-                                                </button>
-                                                <button className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
-                                                    <History className="h-3 w-3" />
-                                                    <span>Service History</span>
-                                                </button>
-                                            </div>
+                                        ))}
+                                    <button
+                                        onClick={() => setAddVehicleOpen(true)}
+                                        disabled={!customer}
+                                        className="mt-3 w-full rounded-lg bg-[#d4af37] py-2 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-50"
+                                    >
+                                        Add Vehicle
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right column */}
+                    <div className="flex flex-col gap-4">
+                        {/* Account Details */}
+                        <div className="profile-card rounded-xl p-5">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="font-semibold">Account Details</h3>
+                                {!isCustomer && (
+                                    <button onClick={() => setNonCustomerSection('account')} aria-label="Edit Account Details">
+                                        <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="space-y-3 text-sm">
+                                {isCustomer && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Member Since:</span>
+                                            <span className="font-medium">{memberSince}</span>
                                         </div>
-                                    ))}
-                                <button
-                                    onClick={() => setAddVehicleOpen(true)}
-                                    disabled={!customer}
-                                    className="mt-3 w-full rounded-lg bg-[#d4af37] py-2 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-50"
-                                >
-                                    Add Vehicle
-                                </button>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">Account Status:</span>
+                                            <span className="font-medium capitalize">{loading ? '…' : (customer?.account_status ?? '—')}</span>
+                                        </div>
+                                    </>
+                                )}
+                                {isFrontdesk && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">Role:</span>
+                                            <span className="font-medium">Front Desk</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">Department:</span>
+                                            <span className="font-medium">Operations</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Member Since:</span>
+                                            <span className="font-medium">{memberSince}</span>
+                                        </div>
+                                    </>
+                                )}
+                                {isAdmin && (
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">Role:</span>
+                                            <span className="font-medium">System Administrator</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-muted-foreground">System Access:</span>
+                                            <span className="font-medium">Full Access</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Member Since:</span>
+                                            <span className="font-medium">{memberSince}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    )}
-                </div>
 
-                {/* Right column */}
-                <div className="flex flex-col gap-4">
-                    {/* Account Details */}
-                    <div className="profile-card rounded-xl p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="font-semibold">Account Details</h3>
-                            {!isCustomer && (
-                                <button onClick={() => setNonCustomerSection('account')} aria-label="Edit Account Details">
-                                    <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-3 text-sm">
-                            {isCustomer && (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Member Since:</span>
-                                        <span className="font-medium">{memberSince}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">Account Status:</span>
-                                        <span className="font-medium capitalize">{loading ? '…' : (customer?.account_status ?? '—')}</span>
-                                    </div>
-                                </>
-                            )}
-                            {isFrontdesk && (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">Role:</span>
-                                        <span className="font-medium">Front Desk</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">Department:</span>
-                                        <span className="font-medium">Operations</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Member Since:</span>
-                                        <span className="font-medium">{memberSince}</span>
-                                    </div>
-                                </>
-                            )}
-                            {isAdmin && (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">Role:</span>
-                                        <span className="font-medium">System Administrator</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">System Access:</span>
-                                        <span className="font-medium">Full Access</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Member Since:</span>
-                                        <span className="font-medium">{memberSince}</span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Special Information */}
-                    <div className="profile-card rounded-xl p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h3 className="font-semibold">Special Information</h3>
-                            {isCustomer ? (
-                                <button
-                                    onClick={() => setSpecialEditOpen(true)}
-                                    aria-label="Edit Special Information"
-                                    disabled={loading || !customer}
-                                >
-                                    <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70 disabled:opacity-30" />
-                                </button>
-                            ) : (
-                                <button onClick={() => setNonCustomerSection('special')} aria-label="Edit Special Information">
-                                    <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="text-muted-foreground">Preferred Contact:</span>
-                                <span className="font-medium">
-                                    {isCustomer
-                                        ? loading
-                                            ? '…'
-                                            : (customer?.preferred_contact_method?.toUpperCase() ?? '—')
-                                        : 'SMS'}
-                                </span>
+                        {/* Special Information */}
+                        <div className="profile-card rounded-xl p-5">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h3 className="font-semibold">Special Information</h3>
+                                {isCustomer ? (
+                                    <button
+                                        onClick={() => setSpecialEditOpen(true)}
+                                        aria-label="Edit Special Information"
+                                        disabled={loading || !customer}
+                                    >
+                                        <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70 disabled:opacity-30" />
+                                    </button>
+                                ) : (
+                                    <button onClick={() => setNonCustomerSection('special')} aria-label="Edit Special Information">
+                                        <SquarePen className="h-4 w-4 text-[#d4af37] transition-opacity hover:opacity-70" />
+                                    </button>
+                                )}
                             </div>
-                            <div className="flex items-start gap-2">
-                                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                                <span className="text-muted-foreground">Notes:</span>
-                                <span className="italic">{isCustomer ? (loading ? '…' : (customer?.special_notes ?? '—')) : 'N/A'}</span>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Preferred Contact:</span>
+                                    <span className="font-medium">
+                                        {isCustomer ? (loading ? '…' : (customer?.preferred_contact_method?.toUpperCase() ?? '—')) : 'SMS'}
+                                    </span>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Notes:</span>
+                                    <span className="italic">{isCustomer ? (loading ? '…' : (customer?.special_notes ?? '—')) : 'N/A'}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 </div>
             </div>
 

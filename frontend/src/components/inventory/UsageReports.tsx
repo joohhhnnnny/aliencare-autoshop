@@ -229,7 +229,9 @@ export function UsageReports() {
                                                     const x2 = 140 + 90 * Math.cos(endAngleRad);
                                                     const y2 = 140 + 90 * Math.sin(endAngleRad);
 
-                                                    const pathData = [`M 140 140`, `L ${x1} ${y1}`, `A 90 90 0 ${largeArc} 1 ${x2} ${y2}`, 'Z'].join(' ');
+                                                    const pathData = [`M 140 140`, `L ${x1} ${y1}`, `A 90 90 0 ${largeArc} 1 ${x2} ${y2}`, 'Z'].join(
+                                                        ' ',
+                                                    );
 
                                                     cumulativePercentage += percentage;
 
@@ -426,38 +428,38 @@ export function UsageReports() {
                             </TableHeader>
                             <TableBody>
                                 {sortedUsageItems.map((item) => {
-                                        const usageIntensity = item.consumed > 10 ? 'HIGH' : item.consumed > 5 ? 'MEDIUM' : 'LOW';
-                                        return (
-                                            <TableRow key={item.item_id} className="border-border hover:bg-muted/50">
-                                                <TableCell className="font-medium text-foreground">{item.part_number}</TableCell>
-                                                <TableCell className="max-w-50 truncate text-foreground" title={item.description}>
-                                                    {item.description}
-                                                </TableCell>
-                                                <TableCell className="text-foreground">{item.category}</TableCell>
-                                                <TableCell className="text-foreground">{item.consumed}</TableCell>
-                                                <TableCell className="text-foreground">₱{item.cost.toFixed(2)}</TableCell>
-                                                <TableCell className="text-foreground">₱{item.unit_price}</TableCell>
-                                                <TableCell className="text-foreground">{item.transaction_count}</TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        variant={
-                                                            usageIntensity === 'HIGH'
-                                                                ? 'destructive'
-                                                                : usageIntensity === 'MEDIUM'
-                                                                  ? 'default'
-                                                                  : 'secondary'
-                                                        }
-                                                    >
-                                                        {usageIntensity}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
+                                    const usageIntensity = item.consumed > 10 ? 'HIGH' : item.consumed > 5 ? 'MEDIUM' : 'LOW';
+                                    return (
+                                        <TableRow key={item.item_id} className="border-border hover:bg-muted/50">
+                                            <TableCell className="font-medium text-foreground">{item.part_number}</TableCell>
+                                            <TableCell className="max-w-50 truncate text-foreground" title={item.description}>
+                                                {item.description}
+                                            </TableCell>
+                                            <TableCell className="text-foreground">{item.category}</TableCell>
+                                            <TableCell className="text-foreground">{item.consumed}</TableCell>
+                                            <TableCell className="text-foreground">₱{item.cost.toFixed(2)}</TableCell>
+                                            <TableCell className="text-foreground">₱{item.unit_price}</TableCell>
+                                            <TableCell className="text-foreground">{item.transaction_count}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={
+                                                        usageIntensity === 'HIGH'
+                                                            ? 'destructive'
+                                                            : usageIntensity === 'MEDIUM'
+                                                              ? 'default'
+                                                              : 'secondary'
+                                                    }
+                                                >
+                                                    {usageIntensity}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </div>
-                                {usageItems.length === 0 && (
+                    {usageItems.length === 0 && (
                         <div className="py-8 text-center text-muted-foreground">No usage data found for the selected period and category</div>
                     )}
                 </CardContent>
