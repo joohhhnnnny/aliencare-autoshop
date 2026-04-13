@@ -180,131 +180,131 @@ function ReceiptDetail({ receipt, onBack }: { receipt: ReceiptRecord; onBack: ()
             <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 {/* Receipt card */}
                 <div ref={receiptRef} className="profile-card mx-auto w-full max-w-2xl rounded-2xl p-8">
-                {/* Brand + Paid badge */}
-                <div className="flex items-start justify-between">
-                    <div>
-                        <p className="text-xl leading-none font-black tracking-tight">
-                            <span className="text-[#d4af37]">ALIEN</span>CARE
-                        </p>
-                        <p className="text-xl leading-none font-black tracking-tight">AUTOSHOP</p>
-                        <p className="mt-1 text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">Customer</p>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Paid
-                    </span>
-                </div>
-
-                {/* Title with gold dividers */}
-                <div className="my-6 flex items-center gap-3">
-                    <div className="flex-1 border-t border-[#d4af37]/40" />
-                    <span className="text-sm font-bold tracking-wide text-[#d4af37]">Full Payment Receipt</span>
-                    <div className="flex-1 border-t border-[#d4af37]/40" />
-                </div>
-
-                {/* Receipt meta */}
-                <div className="mb-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">Receipt No </span>
-                        <span className="font-mono font-semibold text-[#d4af37]">{receipt.receiptNo}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Transaction ID </span>
-                        <span className="font-mono font-semibold">{receipt.transactionId}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Job Order No </span>
-                        <span className="font-mono font-semibold">{receipt.jobOrderNo}</span>
-                    </div>
-                </div>
-
-                <div className="h-px bg-[#2a2a2e]" />
-
-                {/* Customer info */}
-                <div className="my-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">Customer </span>
-                        <span className="font-semibold">{receipt.customerName}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Phone </span>
-                        <span className="font-semibold">{receipt.customerPhone}</span>
-                    </div>
-                    <div>
-                        <span className="text-muted-foreground">Vehicle </span>
-                        <span className="font-semibold">
-                            {receipt.vehicle} – {receipt.vehiclePlate}
+                    {/* Brand + Paid badge */}
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <p className="text-xl leading-none font-black tracking-tight">
+                                <span className="text-[#d4af37]">ALIEN</span>CARE
+                            </p>
+                            <p className="text-xl leading-none font-black tracking-tight">AUTOSHOP</p>
+                            <p className="mt-1 text-[9px] font-semibold tracking-widest text-muted-foreground uppercase">Customer</p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-bold text-green-400">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Paid
                         </span>
                     </div>
-                </div>
 
-                <div className="h-px bg-[#2a2a2e]" />
+                    {/* Title with gold dividers */}
+                    <div className="my-6 flex items-center gap-3">
+                        <div className="flex-1 border-t border-[#d4af37]/40" />
+                        <span className="text-sm font-bold tracking-wide text-[#d4af37]">Full Payment Receipt</span>
+                        <div className="flex-1 border-t border-[#d4af37]/40" />
+                    </div>
 
-                {/* Dates & Branch */}
-                <div className="my-4 flex flex-col gap-2 text-sm">
-                    {(
-                        [
-                            { label: 'Booking Date', value: receipt.bookingDate, extra: receipt.bookingTime },
-                            { label: 'Arrival', value: receipt.arrival, extra: receipt.arrivalTime },
-                            { label: 'Branch', value: receipt.branch, extra: null },
-                        ] as { label: string; value: string; extra: string | null }[]
-                    ).map(({ label, value, extra }) => (
-                        <div key={label} className="flex items-center justify-between gap-4">
-                            <span className="shrink-0 font-semibold text-[#d4af37]">{label}</span>
-                            <div className="flex items-center gap-2 text-right text-muted-foreground">
-                                <span>{value}</span>
-                                {extra && (
-                                    <>
-                                        <span className="text-[#d4af37]">•</span>
-                                        <span>{extra}</span>
-                                    </>
-                                )}
+                    {/* Receipt meta */}
+                    <div className="mb-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                        <div>
+                            <span className="text-muted-foreground">Receipt No </span>
+                            <span className="font-mono font-semibold text-[#d4af37]">{receipt.receiptNo}</span>
+                        </div>
+                        <div>
+                            <span className="text-muted-foreground">Transaction ID </span>
+                            <span className="font-mono font-semibold">{receipt.transactionId}</span>
+                        </div>
+                        <div>
+                            <span className="text-muted-foreground">Job Order No </span>
+                            <span className="font-mono font-semibold">{receipt.jobOrderNo}</span>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-[#2a2a2e]" />
+
+                    {/* Customer info */}
+                    <div className="my-4 grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                        <div>
+                            <span className="text-muted-foreground">Customer </span>
+                            <span className="font-semibold">{receipt.customerName}</span>
+                        </div>
+                        <div>
+                            <span className="text-muted-foreground">Phone </span>
+                            <span className="font-semibold">{receipt.customerPhone}</span>
+                        </div>
+                        <div>
+                            <span className="text-muted-foreground">Vehicle </span>
+                            <span className="font-semibold">
+                                {receipt.vehicle} – {receipt.vehiclePlate}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-[#2a2a2e]" />
+
+                    {/* Dates & Branch */}
+                    <div className="my-4 flex flex-col gap-2 text-sm">
+                        {(
+                            [
+                                { label: 'Booking Date', value: receipt.bookingDate, extra: receipt.bookingTime },
+                                { label: 'Arrival', value: receipt.arrival, extra: receipt.arrivalTime },
+                                { label: 'Branch', value: receipt.branch, extra: null },
+                            ] as { label: string; value: string; extra: string | null }[]
+                        ).map(({ label, value, extra }) => (
+                            <div key={label} className="flex items-center justify-between gap-4">
+                                <span className="shrink-0 font-semibold text-[#d4af37]">{label}</span>
+                                <div className="flex items-center gap-2 text-right text-muted-foreground">
+                                    <span>{value}</span>
+                                    {extra && (
+                                        <>
+                                            <span className="text-[#d4af37]">•</span>
+                                            <span>{extra}</span>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="h-px bg-[#2a2a2e]" />
-
-                {/* Line items */}
-                <div className="my-4 flex flex-col gap-2">
-                    {receipt.lineItems.map((li) => (
-                        <div key={li.label} className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{li.label}</span>
-                            <span className="font-medium">₱{li.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="h-px bg-[#2a2a2e]" />
-
-                {/* Total */}
-                <div className="my-4 flex items-center justify-between text-sm">
-                    <span className="font-bold text-[#d4af37]">Total Paid</span>
-                    <span className="text-base font-bold text-[#d4af37]">
-                        ₱{receipt.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                    </span>
-                </div>
-
-                <div className="h-px bg-[#2a2a2e]" />
-
-                {/* Payment info */}
-                <div className="my-4 grid grid-cols-2 gap-x-8 text-sm">
-                    <div>
-                        <span className="text-muted-foreground">Payment Method </span>
-                        <span className="font-semibold">{receipt.paymentMethod}</span>
+                        ))}
                     </div>
-                    <div>
-                        <span className="text-muted-foreground">Payment Status </span>
-                        <span className="font-semibold text-green-400">Paid</span>
+
+                    <div className="h-px bg-[#2a2a2e]" />
+
+                    {/* Line items */}
+                    <div className="my-4 flex flex-col gap-2">
+                        {receipt.lineItems.map((li) => (
+                            <div key={li.label} className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">{li.label}</span>
+                                <span className="font-medium">₱{li.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                        ))}
                     </div>
-                </div>
 
-                <div className="h-px bg-[#2a2a2e]" />
+                    <div className="h-px bg-[#2a2a2e]" />
 
-                {/* Footer note */}
-                <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                    Thank you! This receipt indicates that your full payment has been received for the requested services.
-                </p>
+                    {/* Total */}
+                    <div className="my-4 flex items-center justify-between text-sm">
+                        <span className="font-bold text-[#d4af37]">Total Paid</span>
+                        <span className="text-base font-bold text-[#d4af37]">
+                            ₱{receipt.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </span>
+                    </div>
+
+                    <div className="h-px bg-[#2a2a2e]" />
+
+                    {/* Payment info */}
+                    <div className="my-4 grid grid-cols-2 gap-x-8 text-sm">
+                        <div>
+                            <span className="text-muted-foreground">Payment Method </span>
+                            <span className="font-semibold">{receipt.paymentMethod}</span>
+                        </div>
+                        <div>
+                            <span className="text-muted-foreground">Payment Status </span>
+                            <span className="font-semibold text-green-400">Paid</span>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-[#2a2a2e]" />
+
+                    {/* Footer note */}
+                    <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                        Thank you! This receipt indicates that your full payment has been received for the requested services.
+                    </p>
                 </div>
 
                 {/* Action buttons */}
@@ -333,7 +333,7 @@ export default function BillingPayment() {
     const [payingId, setPayingId] = useState<number | null>(null);
     const [payError, setPayError] = useState<string | null>(null);
 
-    const { pendingItems, paidItems, outstandingBalance, loading, error: billingError, refresh } = useCustomerBilling();
+    const { pendingItems, paidItems, outstandingBalance, loading, error: billingError } = useCustomerBilling();
 
     const displayItems: CustomerTransaction[] = activeTab === 'pending' ? pendingItems : paidItems;
     const totalPaid = paidItems.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
@@ -390,234 +390,239 @@ export default function BillingPayment() {
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-
-                {/* Loading / Error state */}
-                {billingError && (
-                    <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        {billingError}
-                    </div>
-                )}
-
-                {/* Outstanding Balance */}
-                <div className="profile-card rounded-xl p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Outstanding Balance</p>
-                            <div className="mt-1 flex items-center gap-3">
-                                <p className="text-3xl font-bold text-[#d4af37]">
-                                    {loading ? '—' : `₱${outstandingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}
-                                </p>
-                                <span
-                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${pendingItems.length > 0 ? 'bg-yellow-500/10 text-yellow-400' : 'bg-green-500/10 text-green-400'}`}
-                                >
-                                    {loading ? '…' : pendingItems.length > 0 ? `${pendingItems.length} pending` : 'All paid'}
-                                </span>
-                            </div>
-                        </div>
-                        {pendingItems.length > 0 && (
-                            <button
-                                onClick={handlePayAll}
-                                disabled={payingId !== null}
-                                className="rounded-lg bg-[#d4af37] px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-60"
-                            >
-                                {payingId !== null ? 'Redirecting…' : 'Pay Now'}
-                            </button>
-                        )}
-                    </div>
-                    {payError && <p className="mt-3 text-xs text-red-400">{payError}</p>}
-                    {pendingItems.length > 0 && (
-                        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[#2a2a2e] pt-4">
-                            <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-[#d4af37]" />
-                                <span className="text-xs text-muted-foreground">Outstanding</span>
-                                <span className="text-sm font-semibold text-[#d4af37]">
-                                    ₱{pendingServicesTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
+                    {/* Loading / Error state */}
+                    {billingError && (
+                        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            {billingError}
                         </div>
                     )}
-                </div>
 
-                {/* Summary Stats */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="profile-card rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">Total Paid</p>
-                            <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    {/* Outstanding Balance */}
+                    <div className="profile-card rounded-xl p-6">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Outstanding Balance</p>
+                                <div className="mt-1 flex items-center gap-3">
+                                    <p className="text-3xl font-bold text-[#d4af37]">
+                                        {loading ? '—' : `₱${outstandingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`}
+                                    </p>
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${pendingItems.length > 0 ? 'bg-yellow-500/10 text-yellow-400' : 'bg-green-500/10 text-green-400'}`}
+                                    >
+                                        {loading ? '…' : pendingItems.length > 0 ? `${pendingItems.length} pending` : 'All paid'}
+                                    </span>
+                                </div>
+                            </div>
+                            {pendingItems.length > 0 && (
+                                <button
+                                    onClick={handlePayAll}
+                                    disabled={payingId !== null}
+                                    className="rounded-lg bg-[#d4af37] px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-60"
+                                >
+                                    {payingId !== null ? 'Redirecting…' : 'Pay Now'}
+                                </button>
+                            )}
                         </div>
-                        <p className="mt-2 text-2xl font-bold text-green-400">₱{totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                            {paidItems.length} completed transaction{paidItems.length !== 1 ? 's' : ''}
-                        </p>
-                    </div>
-                    <div className="profile-card rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">Total Transactions</p>
-                            <TrendingUp className="h-4 w-4 text-[#d4af37]" />
-                        </div>
-                        <p className="mt-2 text-2xl font-bold">{pendingItems.length + paidItems.length}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                            {pendingItems.length} pending · {paidItems.length} paid
-                        </p>
-                    </div>
-                    <div className="profile-card rounded-xl p-4">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">Last Payment</p>
-                            <Banknote className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        {lastPayment ? (
-                            <>
-                                <p className="mt-2 text-lg font-bold">
-                                    {new Date(lastPayment.created_at).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                    })}
-                                </p>
-                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                    {lastPayment.notes ?? `Transaction #${lastPayment.id}`}
-                                </p>
-                            </>
-                        ) : (
-                            <p className="mt-2 text-sm text-muted-foreground">No payments yet</p>
+                        {payError && <p className="mt-3 text-xs text-red-400">{payError}</p>}
+                        {pendingItems.length > 0 && (
+                            <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-[#2a2a2e] pt-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-[#d4af37]" />
+                                    <span className="text-xs text-muted-foreground">Outstanding</span>
+                                    <span className="text-sm font-semibold text-[#d4af37]">
+                                        ₱{pendingServicesTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                    </span>
+                                </div>
+                            </div>
                         )}
                     </div>
-                </div>
 
-                {/* Tabs */}
-                <div className="inline-flex gap-1 rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-1">
-                    <button
-                        onClick={() => setActiveTab('pending')}
-                        className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
-                            activeTab === 'pending' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Pending ({pendingItems.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('paid')}
-                        className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
-                            activeTab === 'paid' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Paid ({paidItems.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('receipts')}
-                        className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
-                            activeTab === 'receipts' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Receipts ({SAMPLE_RECEIPTS.length})
-                    </button>
-                </div>
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="profile-card rounded-xl p-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">Total Paid</p>
+                                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                            </div>
+                            <p className="mt-2 text-2xl font-bold text-green-400">
+                                ₱{totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {paidItems.length} completed transaction{paidItems.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                        <div className="profile-card rounded-xl p-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">Total Transactions</p>
+                                <TrendingUp className="h-4 w-4 text-[#d4af37]" />
+                            </div>
+                            <p className="mt-2 text-2xl font-bold">{pendingItems.length + paidItems.length}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {pendingItems.length} pending · {paidItems.length} paid
+                            </p>
+                        </div>
+                        <div className="profile-card rounded-xl p-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-muted-foreground">Last Payment</p>
+                                <Banknote className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            {lastPayment ? (
+                                <>
+                                    <p className="mt-2 text-lg font-bold">
+                                        {new Date(lastPayment.created_at).toLocaleDateString('en-US', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })}
+                                    </p>
+                                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                        {lastPayment.notes ?? `Transaction #${lastPayment.id}`}
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="mt-2 text-sm text-muted-foreground">No payments yet</p>
+                            )}
+                        </div>
+                    </div>
 
-                {/* Billing Items — pending / paid tabs */}
-                {activeTab !== 'receipts' && (
-                    <>
-                        <div className="space-y-3">
-                            {displayItems.map((item) => (
-                                <div key={item.id} className="profile-card rounded-xl p-4 transition-shadow hover:shadow-md">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`rounded-lg p-2.5 ${item.type === 'invoice' ? 'bg-blue-500/10' : 'bg-[#d4af37]/10'}`}>
-                                            {item.type === 'invoice' ? (
-                                                <Receipt className="h-5 w-5 text-blue-500" />
-                                            ) : (
-                                                <CreditCard className="h-5 w-5 text-[#d4af37]" />
-                                            )}
+                    {/* Tabs */}
+                    <div className="inline-flex gap-1 rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-1">
+                        <button
+                            onClick={() => setActiveTab('pending')}
+                            className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'pending' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Pending ({pendingItems.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('paid')}
+                            className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'paid' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Paid ({paidItems.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('receipts')}
+                            className={`rounded-md px-5 py-2 text-sm font-medium transition-colors ${
+                                activeTab === 'receipts' ? 'bg-[#1e1e22] text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Receipts ({SAMPLE_RECEIPTS.length})
+                        </button>
+                    </div>
+
+                    {/* Billing Items — pending / paid tabs */}
+                    {activeTab !== 'receipts' && (
+                        <>
+                            <div className="space-y-3">
+                                {displayItems.map((item) => (
+                                    <div key={item.id} className="profile-card rounded-xl p-4 transition-shadow hover:shadow-md">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`rounded-lg p-2.5 ${item.type === 'invoice' ? 'bg-blue-500/10' : 'bg-[#d4af37]/10'}`}>
+                                                {item.type === 'invoice' ? (
+                                                    <Receipt className="h-5 w-5 text-blue-500" />
+                                                ) : (
+                                                    <CreditCard className="h-5 w-5 text-[#d4af37]" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium">{item.notes ?? `Invoice #${item.id}`}</p>
+                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                        {new Date(item.created_at).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                        })}
+                                                    </span>
+                                                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs capitalize">{item.type}</span>
+                                                    {item.reference_number && <span className="font-mono text-xs">Ref: {item.reference_number}</span>}
+                                                    {activeTab === 'pending' && daysSince(item.created_at) > 7 && (
+                                                        <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
+                                                            <AlertCircle className="h-3 w-3" />
+                                                            {daysSince(item.created_at)} days overdue
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-bold">
+                                                    ₱{Math.abs(Number(item.amount)).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                </p>
+                                                {activeTab === 'pending' ? (
+                                                    <button
+                                                        onClick={() => handlePayNow(item)}
+                                                        disabled={payingId === item.id}
+                                                        className="mt-1 rounded-lg bg-[#d4af37] px-4 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-60"
+                                                    >
+                                                        {payingId === item.id ? '…' : 'Pay Now'}
+                                                    </button>
+                                                ) : (
+                                                    <span className="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-500">
+                                                        Paid
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-medium">{item.notes ?? `Invoice #${item.id}`}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            {displayItems.length === 0 && (
+                                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                                    <p>No {activeTab} payments found.</p>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Receipts tab */}
+                    {activeTab === 'receipts' && (
+                        <div className="space-y-3">
+                            {SAMPLE_RECEIPTS.map((rc) => (
+                                <div key={rc.id} className="profile-card rounded-xl p-4 transition-shadow hover:shadow-md">
+                                    <div className="flex items-center gap-4">
+                                        <div className="rounded-lg bg-[#d4af37]/10 p-2.5">
+                                            <Receipt className="h-5 w-5 text-[#d4af37]" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate font-medium">{rc.lineItems.map((li) => li.label).join(', ')}</p>
                                             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                                                 <span className="flex items-center gap-1">
                                                     <Calendar className="h-3.5 w-3.5" />
-                                                    {new Date(item.created_at).toLocaleDateString('en-US', {
+                                                    {new Date(rc.date).toLocaleDateString('en-US', {
                                                         month: 'short',
                                                         day: 'numeric',
                                                         year: 'numeric',
                                                     })}
                                                 </span>
-                                                <span className="rounded-md bg-muted px-2 py-0.5 text-xs capitalize">{item.type}</span>
-                                                {item.reference_number && <span className="font-mono text-xs">Ref: {item.reference_number}</span>}
-                                                {activeTab === 'pending' && daysSince(item.created_at) > 7 && (
-                                                    <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-                                                        <AlertCircle className="h-3 w-3" />
-                                                        {daysSince(item.created_at)} days overdue
-                                                    </span>
-                                                )}
+                                                <span className="font-mono text-xs">{rc.receiptNo}</span>
+                                                <span className="font-mono text-xs">Job: {rc.jobOrderNo}</span>
+                                                <span className="rounded-md bg-muted px-2 py-0.5 text-xs">{rc.paymentMethod}</span>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold">
-                                                ₱{Math.abs(Number(item.amount)).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                            </p>
-                                            {activeTab === 'pending' ? (
-                                                <button
-                                                    onClick={() => handlePayNow(item)}
-                                                    disabled={payingId === item.id}
-                                                    className="mt-1 rounded-lg bg-[#d4af37] px-4 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-[#e6c24e] disabled:opacity-60"
-                                                >
-                                                    {payingId === item.id ? '…' : 'Pay Now'}
-                                                </button>
-                                            ) : (
+                                        <div className="flex shrink-0 flex-col items-end gap-2">
+                                            <p className="text-lg font-bold">₱{rc.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                                            <div className="flex items-center gap-2">
                                                 <span className="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-500">
                                                     Paid
                                                 </span>
-                                            )}
+                                                <button
+                                                    onClick={() => setViewingReceiptId(rc.id)}
+                                                    className="rounded-lg border border-[#2a2a2e] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[#d4af37]/50 hover:text-[#d4af37]"
+                                                >
+                                                    View Receipt
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                        {displayItems.length === 0 && (
-                            <div className="flex items-center justify-center py-12 text-muted-foreground">
-                                <p>No {activeTab} payments found.</p>
-                            </div>
-                        )}
-                    </>
-                )}
-
-                {/* Receipts tab */}
-                {activeTab === 'receipts' && (
-                    <div className="space-y-3">
-                        {SAMPLE_RECEIPTS.map((rc) => (
-                            <div key={rc.id} className="profile-card rounded-xl p-4 transition-shadow hover:shadow-md">
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded-lg bg-[#d4af37]/10 p-2.5">
-                                        <Receipt className="h-5 w-5 text-[#d4af37]" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate font-medium">{rc.lineItems.map((li) => li.label).join(', ')}</p>
-                                        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-3.5 w-3.5" />
-                                                {new Date(rc.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            </span>
-                                            <span className="font-mono text-xs">{rc.receiptNo}</span>
-                                            <span className="font-mono text-xs">Job: {rc.jobOrderNo}</span>
-                                            <span className="rounded-md bg-muted px-2 py-0.5 text-xs">{rc.paymentMethod}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex shrink-0 flex-col items-end gap-2">
-                                        <p className="text-lg font-bold">₱{rc.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
-                                        <div className="flex items-center gap-2">
-                                            <span className="inline-flex items-center rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-500">
-                                                Paid
-                                            </span>
-                                            <button
-                                                onClick={() => setViewingReceiptId(rc.id)}
-                                                className="rounded-lg border border-[#2a2a2e] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-[#d4af37]/50 hover:text-[#d4af37]"
-                                            >
-                                                View Receipt
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                    )}
                 </div>
             </div>
         </CustomerLayout>

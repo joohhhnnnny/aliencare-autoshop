@@ -35,9 +35,7 @@ export default function Dashboard() {
                         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <p className="text-xs font-semibold tracking-[0.18em] text-[#d4af37] uppercase">Frontdesk Dashboard</p>
-                                <h1 className="mt-2 text-2xl font-bold tracking-tight">
-                                    Welcome back, {user?.name?.split(' ')[0] ?? 'Frontdesk'}
-                                </h1>
+                                <h1 className="mt-2 text-2xl font-bold tracking-tight">Welcome back, {user?.name?.split(' ')[0] ?? 'Frontdesk'}</h1>
                                 <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                                     Keep service operations moving with a live snapshot of offerings, inventory pressure, and quick action shortcuts.
                                 </p>
@@ -59,7 +57,9 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {analyticsError && <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-400">{analyticsError}</div>}
+                    {analyticsError && (
+                        <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-400">{analyticsError}</div>
+                    )}
 
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <div className="profile-card rounded-xl p-5">
@@ -146,7 +146,9 @@ export default function Dashboard() {
                                         <div key={service.id} className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
                                             <p className="text-sm font-semibold">{service.name}</p>
                                             <p className="mt-1 text-xs text-muted-foreground">{service.queue_label}</p>
-                                            <p className="mt-2 text-xs font-semibold text-[#d4af37]">P{service.price_fixed.toLocaleString('en-US')}</p>
+                                            <p className="mt-2 text-xs font-semibold text-[#d4af37]">
+                                                P{service.price_fixed.toLocaleString('en-US')}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
@@ -160,11 +162,11 @@ export default function Dashboard() {
                             <div className="mt-4 space-y-3">
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase">Inventory Items</p>
-                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : analytics?.total_items ?? 0}</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (analytics?.total_items ?? 0)}</p>
                                 </div>
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase">Active Reservations</p>
-                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : analytics?.active_reservations ?? 0}</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (analytics?.active_reservations ?? 0)}</p>
                                 </div>
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase">Inventory Value</p>

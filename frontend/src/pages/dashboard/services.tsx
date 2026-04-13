@@ -1,7 +1,7 @@
 import AppLayout from '@/components/layout/app-layout';
 import { cloneServicePlaceholders } from '@/data/servicePlaceholders';
-import { type ServiceCatalogItem } from '@/types/customer';
 import { type BreadcrumbItem } from '@/types';
+import { type ServiceCatalogItem } from '@/types/customer';
 import { AlertCircle, Check, PencilLine, Plus, Search, Sparkles, Trash2, X } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
@@ -155,10 +155,7 @@ export default function Services() {
         }
     }, [filteredServices, selectedServiceId]);
 
-    const selectedService = useMemo(
-        () => services.find((service) => service.id === selectedServiceId) ?? null,
-        [selectedServiceId, services],
-    );
+    const selectedService = useMemo(() => services.find((service) => service.id === selectedServiceId) ?? null, [selectedServiceId, services]);
 
     const activeCount = services.filter((service) => service.is_active).length;
     const recommendedCount = services.filter((service) => service.recommended).length;
@@ -196,11 +193,7 @@ export default function Services() {
         }
 
         setServices((prev) =>
-            prev.map((service) =>
-                service.id === editingServiceId
-                    ? toServiceItem(formState, service.id, service.created_at)
-                    : service,
-            ),
+            prev.map((service) => (service.id === editingServiceId ? toServiceItem(formState, service.id, service.created_at) : service)),
         );
         setSelectedServiceId(editingServiceId);
         setShowFormModal(false);
@@ -314,7 +307,9 @@ export default function Services() {
                                                     >
                                                         <td className="px-3 py-3 align-top">
                                                             <p className="font-semibold text-foreground">{service.name}</p>
-                                                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{service.description || 'No description set'}</p>
+                                                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                                                                {service.description || 'No description set'}
+                                                            </p>
                                                             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                                                 <span>{service.duration}</span>
                                                                 {service.recommended && (
@@ -324,7 +319,9 @@ export default function Services() {
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="px-3 py-3 align-top text-xs text-muted-foreground">{formatCategory(service.category)}</td>
+                                                        <td className="px-3 py-3 align-top text-xs text-muted-foreground">
+                                                            {formatCategory(service.category)}
+                                                        </td>
                                                         <td className="px-3 py-3 align-top text-xs font-semibold text-[#d4af37]">
                                                             P{service.price_fixed.toLocaleString('en-US')}
                                                         </td>
@@ -373,7 +370,9 @@ export default function Services() {
                                                 P{selectedService.price_fixed.toLocaleString('en-US')}
                                             </span>
                                         </div>
-                                        <p className="mt-3 text-sm text-muted-foreground">{selectedService.description || 'No description available.'}</p>
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            {selectedService.description || 'No description available.'}
+                                        </p>
                                     </div>
 
                                     <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
@@ -385,7 +384,9 @@ export default function Services() {
                                         <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-2.5">
                                             <p className="font-semibold text-foreground">Queue Label</p>
                                             <p>{selectedService.queue_label || 'Not set'}</p>
-                                            <p className="mt-1">Rating: {selectedService.rating.toFixed(1)} ({selectedService.rating_count})</p>
+                                            <p className="mt-1">
+                                                Rating: {selectedService.rating.toFixed(1)} ({selectedService.rating_count})
+                                            </p>
                                         </div>
                                     </div>
 
@@ -394,7 +395,10 @@ export default function Services() {
                                         <div className="flex flex-wrap gap-1.5">
                                             {selectedService.features.length > 0 ? (
                                                 selectedService.features.map((feature) => (
-                                                    <span key={feature} className="rounded-full border border-[#2a2a2e] px-2 py-1 text-xs text-muted-foreground">
+                                                    <span
+                                                        key={feature}
+                                                        className="rounded-full border border-[#2a2a2e] px-2 py-1 text-xs text-muted-foreground"
+                                                    >
                                                         {feature}
                                                     </span>
                                                 ))
@@ -447,14 +451,16 @@ export default function Services() {
             </div>
 
             {showFormModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-                    onClick={() => setShowFormModal(false)}
-                >
-                    <div className="profile-card max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl p-5" onClick={(event) => event.stopPropagation()}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setShowFormModal(false)}>
+                    <div
+                        className="profile-card max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl p-5"
+                        onClick={(event) => event.stopPropagation()}
+                    >
                         <div className="mb-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-semibold tracking-wide text-[#d4af37] uppercase">{formMode === 'create' ? 'Create' : 'Edit'} Service</p>
+                                <p className="text-xs font-semibold tracking-wide text-[#d4af37] uppercase">
+                                    {formMode === 'create' ? 'Create' : 'Edit'} Service
+                                </p>
                                 <h2 className="mt-1 text-lg font-bold">
                                     {formMode === 'create' ? 'Add a new service offering' : 'Update service details'}
                                 </h2>
@@ -483,9 +489,7 @@ export default function Services() {
                                     <span className="text-xs font-semibold text-muted-foreground">Category</span>
                                     <select
                                         value={formState.category}
-                                        onChange={(event) =>
-                                            setFormState((prev) => ({ ...prev, category: event.target.value as ServiceCategory }))
-                                        }
+                                        onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value as ServiceCategory }))}
                                         className="h-10 w-full rounded-lg border border-[#2a2a2e] bg-[#0d0d10] px-3 text-sm focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/30 focus:outline-none"
                                     >
                                         {categoryOptions.map((option) => (
@@ -631,7 +635,7 @@ export default function Services() {
                                     Service is active
                                 </label>
 
-                                <label className="md:col-span-2 space-y-1.5 text-sm">
+                                <label className="space-y-1.5 text-sm md:col-span-2">
                                     <span className="text-xs font-semibold text-muted-foreground">Recommended Note</span>
                                     <input
                                         value={formState.recommendedNote}

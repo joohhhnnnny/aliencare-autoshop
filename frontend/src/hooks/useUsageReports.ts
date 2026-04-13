@@ -162,7 +162,10 @@ function normalizeAnalyticsPayload(rawData: unknown, fallbackStartDate: string, 
     }
 
     const hasModernShape =
-        Array.isArray(rawData.usage_by_item) || Array.isArray(rawData.category_breakdown) || Array.isArray(rawData.top_consumed_items) || isRecord(rawData.summary);
+        Array.isArray(rawData.usage_by_item) ||
+        Array.isArray(rawData.category_breakdown) ||
+        Array.isArray(rawData.top_consumed_items) ||
+        isRecord(rawData.summary);
 
     if (hasModernShape) {
         const usageByItem = Array.isArray(rawData.usage_by_item)
@@ -177,11 +180,7 @@ function normalizeAnalyticsPayload(rawData: unknown, fallbackStartDate: string, 
             ? rawData.top_consumed_items.map((entry) => normalizeUsageItem(entry)).filter((entry): entry is UsageReportData => entry !== null)
             : [...usageByItem].sort((a, b) => b.consumed - a.consumed).slice(0, 10);
 
-        const dateSource = isRecord(rawData.date_range)
-            ? rawData.date_range
-            : isRecord(rawData.period)
-              ? rawData.period
-              : null;
+        const dateSource = isRecord(rawData.date_range) ? rawData.date_range : isRecord(rawData.period) ? rawData.period : null;
 
         const summarySource = isRecord(rawData.summary) ? rawData.summary : null;
         const calculatedTotalConsumed = usageByItem.reduce((sum, item) => sum + item.consumed, 0);
@@ -252,8 +251,8 @@ function normalizeAnalyticsPayload(rawData: unknown, fallbackStartDate: string, 
               .map(([category, value]) =>
                   normalizeCategoryItem({
                       category,
-                      consumed: isRecord(value) ? value.quantity ?? value.consumed ?? value.count : 0,
-                      cost: isRecord(value) ? value.cost ?? value.value : 0,
+                      consumed: isRecord(value) ? (value.quantity ?? value.consumed ?? value.count) : 0,
+                      cost: isRecord(value) ? (value.cost ?? value.value) : 0,
                       item_count: isRecord(value) ? value.count : 0,
                   }),
               )

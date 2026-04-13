@@ -367,7 +367,7 @@ export default function CustomerServices() {
                 setCheckingOnboarding(false);
             }
         },
-        [navigate]
+        [navigate],
     );
 
     const beginBookingFlow = useCallback(
@@ -381,7 +381,7 @@ export default function CustomerServices() {
                 setModalStep('confirm');
             }
         },
-        [ensureOnboardingForBooking, selectedId]
+        [ensureOnboardingForBooking, selectedId],
     );
 
     const proceedToSecureStep = useCallback(async () => {
