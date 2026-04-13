@@ -230,7 +230,7 @@ export default function CustomerReservations() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="mx-auto max-w-3xl px-4 py-8">
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden px-4 py-8">
                 {/* Page title */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-white">My Reservations</h1>
@@ -259,62 +259,64 @@ export default function CustomerReservations() {
                     </div>
                 )}
 
-                {/* Content */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-20 text-zinc-500">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                ) : error ? (
-                    <div className="flex flex-col items-center gap-3 py-20 text-center text-zinc-500">
-                        <AlertCircle className="h-8 w-8 text-red-400" />
-                        <p className="text-sm">{error}</p>
-                        <button
-                            onClick={() => load(page)}
-                            className="mt-1 text-xs text-[#d4af37] underline underline-offset-4"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                ) : reservations.length === 0 ? (
-                    <div className="flex flex-col items-center gap-3 py-20 text-center text-zinc-500">
-                        <Package className="h-10 w-10 opacity-40" />
-                        <p className="text-sm">You have no reservations yet.</p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-4">
-                        {reservations.map((r) => (
-                            <ReservationCard
-                                key={r.id}
-                                reservation={r}
-                                onPayFee={handlePayFee}
-                                payingId={payingId}
-                            />
-                        ))}
-                    </div>
-                )}
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    {/* Content */}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20 text-zinc-500">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center gap-3 py-20 text-center text-zinc-500">
+                            <AlertCircle className="h-8 w-8 text-red-400" />
+                            <p className="text-sm">{error}</p>
+                            <button
+                                onClick={() => load(page)}
+                                className="mt-1 text-xs text-[#d4af37] underline underline-offset-4"
+                            >
+                                Retry
+                            </button>
+                        </div>
+                    ) : reservations.length === 0 ? (
+                        <div className="flex flex-col items-center gap-3 py-20 text-center text-zinc-500">
+                            <Package className="h-10 w-10 opacity-40" />
+                            <p className="text-sm">You have no reservations yet.</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            {reservations.map((r) => (
+                                <ReservationCard
+                                    key={r.id}
+                                    reservation={r}
+                                    onPayFee={handlePayFee}
+                                    payingId={payingId}
+                                />
+                            ))}
+                        </div>
+                    )}
 
-                {/* Pagination */}
-                {!loading && !error && lastPage > 1 && (
-                    <div className="mt-6 flex items-center justify-center gap-3">
-                        <button
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:bg-white/10 disabled:opacity-40"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="text-sm text-zinc-400">
-                            Page {page} of {lastPage}
-                        </span>
-                        <button
-                            onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                            disabled={page === lastPage}
-                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:bg-white/10 disabled:opacity-40"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
+                    {/* Pagination */}
+                    {!loading && !error && lastPage > 1 && (
+                        <div className="mt-6 flex items-center justify-center gap-3">
+                            <button
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:bg-white/10 disabled:opacity-40"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <span className="text-sm text-zinc-400">
+                                Page {page} of {lastPage}
+                            </span>
+                            <button
+                                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                                disabled={page === lastPage}
+                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 transition hover:bg-white/10 disabled:opacity-40"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
                     </div>
-                )}
             </div>
         </CustomerLayout>
     );

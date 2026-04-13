@@ -7,7 +7,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Billing & Payment', href: '/bil
 export default function Billing() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full flex-1 flex-col items-center justify-center gap-4 p-8">
+            <div className="flex min-h-full flex-col items-center justify-center gap-4 p-5">
                 <Construction className="h-16 w-16 text-muted-foreground" />
                 <h1 className="text-2xl font-bold">Billing &amp; Payment</h1>
                 <p className="text-muted-foreground">This page is under construction.</p>

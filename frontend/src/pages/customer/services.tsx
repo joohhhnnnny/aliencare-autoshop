@@ -448,7 +448,7 @@ export default function CustomerServices() {
     if (loading) {
         return (
             <CustomerLayout>
-                <div className="flex items-center justify-center py-24">
+                <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6">
                     <Loader2 className="h-8 w-8 animate-spin text-[#d4af37]" />
                 </div>
             </CustomerLayout>
@@ -458,8 +458,8 @@ export default function CustomerServices() {
     if (error) {
         return (
             <CustomerLayout>
-                <div className="p-5">
-                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">{error}</div>
+                <div className="flex h-full min-h-0 flex-1 p-5">
+                    <div className="w-full rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">{error}</div>
                 </div>
             </CustomerLayout>
         );
@@ -468,7 +468,7 @@ export default function CustomerServices() {
     if (!selectedService) {
         return (
             <CustomerLayout>
-                <div className="flex items-center justify-center py-24 text-muted-foreground">
+                <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6 text-muted-foreground">
                     <p>No services available.</p>
                 </div>
             </CustomerLayout>
@@ -477,9 +477,9 @@ export default function CustomerServices() {
 
     return (
         <CustomerLayout>
-            <div className="grid min-h-full grid-cols-1 items-start gap-5 p-5 xl:grid-cols-[1fr_360px]">
+            <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto p-5 xl:grid-cols-[1fr_360px] xl:items-stretch xl:overflow-hidden">
                 {/* ── LEFT PANEL ─────────────────────────────────────────────── */}
-                <div className="flex flex-col gap-5">
+                <div className="flex min-h-0 flex-col gap-5 xl:overflow-y-auto xl:pr-1">
                     {/* Recommended Banner */}
                     {recommended && (
                         <div className="profile-card relative flex items-center justify-between overflow-hidden rounded-xl p-5">
@@ -595,7 +595,7 @@ export default function CustomerServices() {
                 </div>
 
                 {/* ── RIGHT PANEL (Booking) ─────────────────────────────────── */}
-                <div className="profile-card sticky top-5 flex flex-col gap-4 rounded-xl p-5">
+                <div className="profile-card flex min-h-0 flex-col gap-4 rounded-xl p-5 xl:self-stretch xl:overflow-y-auto">
                     {/* Service Header */}
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex flex-col gap-1">

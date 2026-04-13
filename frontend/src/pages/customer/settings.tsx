@@ -37,7 +37,7 @@ export default function CustomerSettings() {
 
     return (
         <CustomerLayout>
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
                 {/* Page header */}
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
@@ -45,9 +45,9 @@ export default function CustomerSettings() {
                 </div>
 
                 {/* Two-column settings layout on lg+, stacked on smaller screens */}
-                <div className="flex flex-1 gap-6 lg:items-start">
+                <div className="flex min-h-0 flex-1 gap-6 overflow-hidden lg:items-start">
                     {/* Left: Section navigation */}
-                    <div className="w-full shrink-0 lg:w-56">
+                    <div className="w-full shrink-0 lg:min-h-0 lg:w-56 lg:overflow-y-auto">
                         <nav className="overflow-hidden rounded-xl border border-[#2a2a2e] bg-[#0d0d10]">
                             {SETTING_SECTIONS.map((section, sIdx) => (
                                 <div key={section.id}>
@@ -78,7 +78,7 @@ export default function CustomerSettings() {
                     </div>
 
                     {/* Right: Section content */}
-                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
                         <div>
                             <h2 className="text-lg font-semibold">{currentSection.title}</h2>
                             <p className="mt-0.5 text-xs text-muted-foreground">

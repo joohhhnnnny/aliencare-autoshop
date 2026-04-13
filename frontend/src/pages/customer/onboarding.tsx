@@ -213,7 +213,7 @@ export default function CustomerOnboarding() {
     if (loading) {
         return (
             <CustomerLayout>
-                <div className="flex h-full min-h-[60vh] items-center justify-center p-6 text-muted-foreground">
+                <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6 text-muted-foreground">
                     <LoaderCircle className="h-5 w-5 animate-spin" />
                     <span className="ml-2">Loading onboarding…</span>
                 </div>
@@ -223,7 +223,7 @@ export default function CustomerOnboarding() {
 
     return (
         <CustomerLayout>
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-1 flex-col gap-6 overflow-hidden p-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Complete Your Onboarding</h1>
                     <p className="text-sm text-muted-foreground">
@@ -231,7 +231,7 @@ export default function CustomerOnboarding() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
                     <InputError
                         message={formError ?? undefined}
                         className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-300"

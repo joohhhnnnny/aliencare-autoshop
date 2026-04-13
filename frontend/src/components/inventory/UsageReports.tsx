@@ -28,15 +28,14 @@ export function UsageReports() {
         selectedCategory,
     });
 
-    // Get unique categories from the data
-    const categories = data ? [...new Set(data.category_breakdown.map((cat) => cat.category))] : [];
-
     const exportReport = () => {
         if (!data) return;
 
+        const usageRows = Array.isArray(data.usage_by_item) ? data.usage_by_item : [];
+
         const csvContent = [
             'Part Number,Description,Consumed,Cost,Category,Unit Price,Transaction Count',
-            ...data.usage_by_item.map(
+            ...usageRows.map(
                 (item) =>
                     `${item.part_number},"${item.description}",${item.consumed},${item.cost.toFixed(2)},${item.category},${item.unit_price},${item.transaction_count}`,
             ),
@@ -53,7 +52,7 @@ export function UsageReports() {
 
     if (loading) {
         return (
-            <div className="flex min-h-[400px] items-center justify-center">
+            <div className="flex min-h-100 items-center justify-center">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <span>Loading usage reports...</span>
@@ -102,6 +101,14 @@ export function UsageReports() {
             </div>
         );
     }
+
+    const usageItems = Array.isArray(data.usage_by_item) ? data.usage_by_item : [];
+    const categoryBreakdown = Array.isArray(data.category_breakdown) ? data.category_breakdown : [];
+    const topConsumedItems = (Array.isArray(data.top_consumed_items) ? data.top_consumed_items : []).slice(0, 5);
+    const sortedUsageItems = [...usageItems].sort((a, b) => b.consumed - a.consumed);
+    const maxTopConsumed = topConsumedItems.length > 0 ? Math.max(...topConsumedItems.map((item) => item.consumed)) : 0;
+    const totalCategoryConsumed = categoryBreakdown.reduce((sum, cat) => sum + cat.consumed, 0);
+    const categories = [...new Set(categoryBreakdown.map((cat) => cat.category).filter(Boolean))];
 
     return (
         <div className="space-y-6">
@@ -199,55 +206,58 @@ export function UsageReports() {
                             {/* Pie Chart */}
                             <div className="flex flex-1 justify-center">
                                 <div className="relative">
-                                    <svg width="280" height="280" viewBox="0 0 280 280" className="-rotate-90 transform">
-                                        {(() => {
-                                            const filteredData = data.category_breakdown.filter((cat) => cat.consumed > 0);
-                                            const total = filteredData.reduce((sum, cat) => sum + cat.consumed, 0);
-                                            let cumulativePercentage = 0;
-                                            // System color palette - golden, amber, orange, purple, red
-                                            const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
+                                    {categoryBreakdown.filter((cat) => cat.consumed > 0).length > 0 ? (
+                                        <svg width="280" height="280" viewBox="0 0 280 280" className="-rotate-90 transform">
+                                            {(() => {
+                                                const filteredData = categoryBreakdown.filter((cat) => cat.consumed > 0);
+                                                const total = filteredData.reduce((sum, cat) => sum + cat.consumed, 0);
+                                                let cumulativePercentage = 0;
+                                                const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
 
-                                            return filteredData.map((cat, index) => {
-                                                const percentage = (cat.consumed / total) * 100;
-                                                const startAngle = (cumulativePercentage / 100) * 360;
-                                                const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
+                                                return filteredData.map((cat, index) => {
+                                                    const percentage = (cat.consumed / total) * 100;
+                                                    const startAngle = (cumulativePercentage / 100) * 360;
+                                                    const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
 
-                                                const startAngleRad = (startAngle * Math.PI) / 180;
-                                                const endAngleRad = (endAngle * Math.PI) / 180;
+                                                    const startAngleRad = (startAngle * Math.PI) / 180;
+                                                    const endAngleRad = (endAngle * Math.PI) / 180;
 
-                                                const largeArc = percentage > 50 ? 1 : 0;
+                                                    const largeArc = percentage > 50 ? 1 : 0;
 
-                                                const x1 = 140 + 90 * Math.cos(startAngleRad);
-                                                const y1 = 140 + 90 * Math.sin(startAngleRad);
-                                                const x2 = 140 + 90 * Math.cos(endAngleRad);
-                                                const y2 = 140 + 90 * Math.sin(endAngleRad);
+                                                    const x1 = 140 + 90 * Math.cos(startAngleRad);
+                                                    const y1 = 140 + 90 * Math.sin(startAngleRad);
+                                                    const x2 = 140 + 90 * Math.cos(endAngleRad);
+                                                    const y2 = 140 + 90 * Math.sin(endAngleRad);
 
-                                                const pathData = [`M 140 140`, `L ${x1} ${y1}`, `A 90 90 0 ${largeArc} 1 ${x2} ${y2}`, 'Z'].join(' ');
+                                                    const pathData = [`M 140 140`, `L ${x1} ${y1}`, `A 90 90 0 ${largeArc} 1 ${x2} ${y2}`, 'Z'].join(' ');
 
-                                                cumulativePercentage += percentage;
+                                                    cumulativePercentage += percentage;
 
-                                                return (
-                                                    <path
-                                                        key={cat.category}
-                                                        d={pathData}
-                                                        fill={colors[index % colors.length]}
-                                                        stroke="hsl(var(--background))"
-                                                        strokeWidth="3"
-                                                        className="cursor-pointer transition-all duration-200 hover:opacity-90"
-                                                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
-                                                    />
-                                                );
-                                            });
-                                        })()}
-                                    </svg>
+                                                    return (
+                                                        <path
+                                                            key={cat.category}
+                                                            d={pathData}
+                                                            fill={colors[index % colors.length]}
+                                                            stroke="hsl(var(--background))"
+                                                            strokeWidth="3"
+                                                            className="cursor-pointer transition-all duration-200 hover:opacity-90"
+                                                            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+                                                        />
+                                                    );
+                                                });
+                                            })()}
+                                        </svg>
+                                    ) : (
+                                        <div className="flex h-70 w-70 items-center justify-center rounded-full border border-dashed border-border text-sm text-muted-foreground">
+                                            No category usage yet
+                                        </div>
+                                    )}
 
                                     {/* Center label */}
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="text-center">
                                             <div className="text-sm font-medium text-muted-foreground">Total</div>
-                                            <div className="text-lg font-bold text-foreground">
-                                                {data.category_breakdown.reduce((sum, cat) => sum + cat.consumed, 0)}
-                                            </div>
+                                            <div className="text-lg font-bold text-foreground">{totalCategoryConsumed}</div>
                                             <div className="text-xs text-muted-foreground">units</div>
                                         </div>
                                     </div>
@@ -257,11 +267,11 @@ export function UsageReports() {
                             {/* Legend */}
                             <div className="flex-1 space-y-4">
                                 <h4 className="mb-3 font-semibold text-foreground">Category Breakdown</h4>
-                                {data.category_breakdown
+                                {categoryBreakdown
                                     .filter((cat) => cat.consumed > 0)
                                     .sort((a, b) => b.consumed - a.consumed)
                                     .map((cat, index) => {
-                                        const total = data.category_breakdown.reduce((sum, c) => sum + c.consumed, 0);
+                                        const total = totalCategoryConsumed;
                                         const percentage = total > 0 ? ((cat.consumed / total) * 100).toFixed(1) : '0.0';
                                         const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
 
@@ -300,53 +310,56 @@ export function UsageReports() {
                             {/* Bar Chart */}
                             <div className="relative mt-8">
                                 <div className="flex h-72 items-end justify-between gap-4 rounded-lg bg-muted/20 p-6">
-                                    {data.top_consumed_items.slice(0, 5).map((item, index) => {
-                                        const maxConsumed = Math.max(...data.top_consumed_items.slice(0, 5).map((d) => d.consumed));
-                                        const barHeight = maxConsumed > 0 ? (item.consumed / maxConsumed) * 200 : 0;
-                                        // System color palette - golden, amber, orange, purple, red
-                                        const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
+                                    {topConsumedItems.length > 0 ? (
+                                        topConsumedItems.map((item, index) => {
+                                            const barHeight = maxTopConsumed > 0 ? (item.consumed / maxTopConsumed) * 200 : 0;
+                                            const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
 
-                                        return (
-                                            <div key={item.item_id} className="group flex flex-1 flex-col items-center">
-                                                {/* Value label above bar */}
-                                                <div className="mb-3 text-center">
-                                                    <div className="text-lg font-bold text-foreground">{item.consumed}</div>
-                                                    <div className="text-xs text-muted-foreground">units</div>
-                                                </div>
+                                            return (
+                                                <div key={item.item_id} className="group flex flex-1 flex-col items-center">
+                                                    {/* Value label above bar */}
+                                                    <div className="mb-3 text-center">
+                                                        <div className="text-lg font-bold text-foreground">{item.consumed}</div>
+                                                        <div className="text-xs text-muted-foreground">units</div>
+                                                    </div>
 
-                                                {/* Bar */}
-                                                <div className="relative flex items-end">
-                                                    <div
-                                                        className="relative w-16 overflow-hidden rounded-t-lg transition-all duration-500 ease-out group-hover:scale-105 group-hover:shadow-lg"
-                                                        style={{
-                                                            height: `${Math.max(barHeight, 8)}px`,
-                                                            backgroundColor: colors[index % colors.length],
-                                                            minHeight: '8px',
-                                                        }}
-                                                    >
-                                                        {/* Gradient overlay for depth */}
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                                                    {/* Bar */}
+                                                    <div className="relative flex items-end">
+                                                        <div
+                                                            className="relative w-16 overflow-hidden rounded-t-lg transition-all duration-500 ease-out group-hover:scale-105 group-hover:shadow-lg"
+                                                            style={{
+                                                                height: `${Math.max(barHeight, 8)}px`,
+                                                                backgroundColor: colors[index % colors.length],
+                                                                minHeight: '8px',
+                                                            }}
+                                                        >
+                                                            {/* Gradient overlay for depth */}
+                                                            <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent" />
 
-                                                        {/* Shimmer effect on hover */}
-                                                        <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-[100%]" />
+                                                            {/* Shimmer effect on hover */}
+                                                            <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Part info below bar */}
+                                                    <div className="mt-4 max-w-22.5 text-center">
+                                                        <div className="truncate text-sm font-semibold text-foreground">{item.part_number}</div>
+                                                        <div className="mt-1 text-xs font-medium text-muted-foreground">₱{item.cost.toFixed(2)}</div>
                                                     </div>
                                                 </div>
-
-                                                {/* Part info below bar */}
-                                                <div className="mt-4 max-w-[90px] text-center">
-                                                    <div className="truncate text-sm font-semibold text-foreground">{item.part_number}</div>
-                                                    <div className="mt-1 text-xs font-medium text-muted-foreground">₱{item.cost.toFixed(2)}</div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                                            No item consumption yet
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Y-axis labels */}
                                 <div className="absolute top-6 bottom-16 left-0 flex flex-col justify-between text-xs text-muted-foreground">
                                     {Array.from({ length: 5 }, (_, i) => {
-                                        const maxConsumed = Math.max(...data.top_consumed_items.slice(0, 5).map((d) => d.consumed));
-                                        const value = Math.round((maxConsumed * (4 - i)) / 4);
+                                        const value = Math.round((maxTopConsumed * (4 - i)) / 4);
                                         return (
                                             <div key={i} className="flex items-center">
                                                 <span className="w-6 text-right">{value}</span>
@@ -360,7 +373,7 @@ export function UsageReports() {
                             {/* Enhanced Legend */}
                             <div className="space-y-3 border-t border-border pt-8">
                                 <h4 className="mb-4 font-semibold text-foreground">Part Details</h4>
-                                {data.top_consumed_items.slice(0, 5).map((item, index) => {
+                                {topConsumedItems.map((item, index) => {
                                     const colors = ['#dfb400', '#f59e0b', '#f97316', '#a855f7', '#ef4444'];
                                     return (
                                         <div
@@ -370,7 +383,7 @@ export function UsageReports() {
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-4">
                                                     <div
-                                                        className="h-4 w-4 flex-shrink-0 rounded-sm border-2 border-background shadow-sm"
+                                                        className="h-4 w-4 shrink-0 rounded-sm border-2 border-background shadow-sm"
                                                         style={{ backgroundColor: colors[index % colors.length] }}
                                                     />
                                                     <div className="min-w-0 flex-1">
@@ -378,7 +391,7 @@ export function UsageReports() {
                                                         <div className="truncate text-sm text-muted-foreground">{item.description}</div>
                                                     </div>
                                                 </div>
-                                                <div className="ml-4 flex-shrink-0 text-right">
+                                                <div className="ml-4 shrink-0 text-right">
                                                     <div className="font-bold text-foreground">{item.consumed} units</div>
                                                     <div className="text-sm text-muted-foreground">₱{item.cost.toFixed(2)}</div>
                                                 </div>
@@ -412,14 +425,12 @@ export function UsageReports() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {data.usage_by_item
-                                    .sort((a, b) => b.consumed - a.consumed)
-                                    .map((item) => {
+                                {sortedUsageItems.map((item) => {
                                         const usageIntensity = item.consumed > 10 ? 'HIGH' : item.consumed > 5 ? 'MEDIUM' : 'LOW';
                                         return (
                                             <TableRow key={item.item_id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="font-medium text-foreground">{item.part_number}</TableCell>
-                                                <TableCell className="max-w-[200px] truncate text-foreground" title={item.description}>
+                                                <TableCell className="max-w-50 truncate text-foreground" title={item.description}>
                                                     {item.description}
                                                 </TableCell>
                                                 <TableCell className="text-foreground">{item.category}</TableCell>
@@ -446,7 +457,7 @@ export function UsageReports() {
                             </TableBody>
                         </Table>
                     </div>
-                    {data.usage_by_item.length === 0 && (
+                                {usageItems.length === 0 && (
                         <div className="py-8 text-center text-muted-foreground">No usage data found for the selected period and category</div>
                     )}
                 </CardContent>

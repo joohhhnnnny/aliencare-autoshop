@@ -121,9 +121,9 @@ export default function Shop() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="grid min-h-full grid-cols-1 items-start gap-5 p-5 xl:grid-cols-[1fr_340px]">
+            <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto p-5 xl:grid-cols-[1fr_340px] xl:items-stretch xl:overflow-hidden">
                 {/* ── LEFT: Products ──────────────────────────────────────── */}
-                <div className="flex flex-col gap-5">
+                <div className="flex min-h-0 flex-col gap-5">
                     {/* Search & Filters */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="relative flex-1">
@@ -161,75 +161,77 @@ export default function Shop() {
                         </div>
                     )}
 
-                    {/* Products Grid */}
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {productsLoading
-                            ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="profile-card h-48 animate-pulse rounded-xl" />)
-                            : filtered.map((product) => {
-                                  const Icon = CATEGORY_ICONS[product.category] ?? Package;
-                                  return (
-                                      <div
-                                          key={product.id}
-                                          className="profile-card relative overflow-hidden rounded-xl p-5 transition-all hover:shadow-[0_0_0_1px_rgba(212,175,55,0.3)]"
-                                      >
-                                          {/* Product photo — right-half background */}
-                                          <img
-                                              src={PRODUCT_IMAGES[product.id]}
-                                              alt=""
-                                              aria-hidden="true"
-                                              loading="lazy"
-                                              className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 object-cover object-center opacity-55 select-none"
-                                          />
-                                          {/* Gradient fade: transparent on right → dark on left */}
-                                          <div className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 bg-linear-to-l from-[#1e1e22] via-[#1e1e22]/70 to-transparent" />
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                        {/* Products Grid */}
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {productsLoading
+                                ? Array.from({ length: 6 }).map((_, i) => <div key={i} className="profile-card h-48 animate-pulse rounded-xl" />)
+                                : filtered.map((product) => {
+                                      const Icon = CATEGORY_ICONS[product.category] ?? Package;
+                                      return (
+                                          <div
+                                              key={product.id}
+                                              className="profile-card relative overflow-hidden rounded-xl p-5 transition-all hover:shadow-[0_0_0_1px_rgba(212,175,55,0.3)]"
+                                          >
+                                              {/* Product photo — right-half background */}
+                                              <img
+                                                  src={PRODUCT_IMAGES[product.id]}
+                                                  alt=""
+                                                  aria-hidden="true"
+                                                  loading="lazy"
+                                                  className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 object-cover object-center opacity-55 select-none"
+                                              />
+                                              {/* Gradient fade: transparent on right → dark on left */}
+                                              <div className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/2 bg-linear-to-l from-[#1e1e22] via-[#1e1e22]/70 to-transparent" />
 
-                                          {/* Card content */}
-                                          <div className="relative z-10">
-                                              {/* Icon + badges row */}
-                                              <div className="mb-3 flex items-center justify-between">
-                                                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#d4af37]/10">
-                                                      <Icon className="h-4 w-4 text-[#d4af37]" />
-                                                  </div>
-                                                  <div className="flex items-center gap-1.5">
-                                                      <span className="rounded-md bg-[#d4af37]/10 px-2 py-0.5 text-xs font-medium text-[#d4af37]">
-                                                          {product.category}
-                                                      </span>
-                                                      {!product.inStock && (
-                                                          <span className="rounded-md bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
-                                                              Out of Stock
+                                              {/* Card content */}
+                                              <div className="relative z-10">
+                                                  {/* Icon + badges row */}
+                                                  <div className="mb-3 flex items-center justify-between">
+                                                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#d4af37]/10">
+                                                          <Icon className="h-4 w-4 text-[#d4af37]" />
+                                                      </div>
+                                                      <div className="flex items-center gap-1.5">
+                                                          <span className="rounded-md bg-[#d4af37]/10 px-2 py-0.5 text-xs font-medium text-[#d4af37]">
+                                                              {product.category}
                                                           </span>
-                                                      )}
+                                                          {!product.inStock && (
+                                                              <span className="rounded-md bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
+                                                                  Out of Stock
+                                                              </span>
+                                                          )}
+                                                      </div>
                                                   </div>
-                                              </div>
 
-                                              <h3 className="text-sm leading-snug font-bold">{product.name}</h3>
-                                              <p className="mt-1 text-xs text-muted-foreground">{product.description}</p>
+                                                  <h3 className="text-sm leading-snug font-bold">{product.name}</h3>
+                                                  <p className="mt-1 text-xs text-muted-foreground">{product.description}</p>
 
-                                              <div className="mt-4 flex items-center justify-between">
-                                                  <span className="text-base font-bold">₱{product.price.toLocaleString()}</span>
-                                                  <button
-                                                      onClick={() => addToCart(product)}
-                                                      disabled={!product.inStock}
-                                                      className="rounded-lg bg-[#d4af37] px-3 py-1.5 text-xs font-bold text-black shadow-[0_2px_8px_rgba(212,175,55,0.25)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
-                                                  >
-                                                      Add to Cart
-                                                  </button>
+                                                  <div className="mt-4 flex items-center justify-between">
+                                                      <span className="text-base font-bold">₱{product.price.toLocaleString()}</span>
+                                                      <button
+                                                          onClick={() => addToCart(product)}
+                                                          disabled={!product.inStock}
+                                                          className="rounded-lg bg-[#d4af37] px-3 py-1.5 text-xs font-bold text-black shadow-[0_2px_8px_rgba(212,175,55,0.25)] transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                                                      >
+                                                          Add to Cart
+                                                      </button>
+                                                  </div>
                                               </div>
                                           </div>
-                                      </div>
-                                  );
-                              })}
-                    </div>
-
-                    {!productsLoading && filtered.length === 0 && (
-                        <div className="flex items-center justify-center py-12 text-muted-foreground">
-                            <p className="text-sm">No products found matching your criteria.</p>
+                                      );
+                                  })}
                         </div>
-                    )}
+
+                        {!productsLoading && filtered.length === 0 && (
+                            <div className="flex items-center justify-center py-12 text-muted-foreground">
+                                <p className="text-sm">No products found matching your criteria.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* ── RIGHT: Cart panel ────────────────────────────────────── */}
-                <div className="profile-card sticky top-5 flex max-h-[calc(100vh-2.5rem)] flex-col gap-4 rounded-xl p-5">
+                <div className="profile-card flex min-h-0 flex-col gap-4 rounded-xl p-5 xl:self-stretch">
                     {/* Cart header */}
                     <div className="flex shrink-0 items-center justify-between">
                         <h2 className="flex items-center gap-2 text-base font-bold">

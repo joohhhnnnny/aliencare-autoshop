@@ -67,13 +67,14 @@ export default function CustomerDashboard() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Welcome back, {user?.name?.split(' ')[0] ?? 'Customer'}!</h1>
                     <p className="text-muted-foreground">Here's an overview of your account.</p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {/* Active Services Card */}
                     <div className="profile-card rounded-xl p-6">
                         <div className="flex items-center gap-2">
@@ -143,55 +144,56 @@ export default function CustomerDashboard() {
                                   : `${vehicleCount} registered vehicle${vehicleCount > 1 ? 's' : ''}`}
                         </p>
                     </div>
-                </div>
+                    </div>
 
-                {/* Recent Activity */}
-                <div className="profile-card rounded-xl p-6">
-                    <h2 className="text-lg font-semibold">Recent Activity</h2>
-                    <div className="mt-4">
-                        {loading ? (
-                            <div className="flex items-center justify-center py-8 text-muted-foreground">
-                                <p>Loading activity…</p>
-                            </div>
-                        ) : activeJobOrders.length === 0 && pendingItems.length === 0 ? (
-                            <div className="flex items-center justify-center py-8 text-muted-foreground">
-                                <p>No recent activity</p>
-                            </div>
-                        ) : (
-                            <ul className="divide-y divide-border">
-                                {activeJobOrders.slice(0, 3).map((jo) => {
-                                    const statusMeta = getStatusMeta(jo.status, jo.status_label, jo.status_color);
+                    {/* Recent Activity */}
+                    <div className="profile-card rounded-xl p-6">
+                        <h2 className="text-lg font-semibold">Recent Activity</h2>
+                        <div className="mt-4">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                                    <p>Loading activity…</p>
+                                </div>
+                            ) : activeJobOrders.length === 0 && pendingItems.length === 0 ? (
+                                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                                    <p>No recent activity</p>
+                                </div>
+                            ) : (
+                                <ul className="divide-y divide-border">
+                                    {activeJobOrders.slice(0, 3).map((jo) => {
+                                        const statusMeta = getStatusMeta(jo.status, jo.status_label, jo.status_color);
 
-                                    return (
-                                        <li key={jo.id} className="flex items-center justify-between py-3">
+                                        return (
+                                            <li key={jo.id} className="flex items-center justify-between py-3">
+                                                <div>
+                                                    <p className="text-sm font-medium">{jo.jo_number}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {jo.vehicle ? `${jo.vehicle.make} ${jo.vehicle.model}` : 'Vehicle'} — {statusMeta.label}
+                                                    </p>
+                                                </div>
+                                                <span
+                                                    className="rounded-full px-2 py-0.5 text-xs font-medium"
+                                                    style={{ backgroundColor: `${statusMeta.color}20`, color: statusMeta.color }}
+                                                >
+                                                    {statusMeta.label}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                    {pendingItems.slice(0, 2).map((tx) => (
+                                        <li key={tx.id} className="flex items-center justify-between py-3">
                                             <div>
-                                                <p className="text-sm font-medium">{jo.jo_number}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {jo.vehicle ? `${jo.vehicle.make} ${jo.vehicle.model}` : 'Vehicle'} — {statusMeta.label}
-                                                </p>
+                                                <p className="text-sm font-medium">{tx.notes ?? `Invoice #${tx.id}`}</p>
+                                                <p className="text-xs text-muted-foreground">Pending payment</p>
                                             </div>
-                                            <span
-                                                className="rounded-full px-2 py-0.5 text-xs font-medium"
-                                                style={{ backgroundColor: `${statusMeta.color}20`, color: statusMeta.color }}
-                                            >
-                                                {statusMeta.label}
+                                            <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500">
+                                                ₱{Number(tx.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </li>
-                                    );
-                                })}
-                                {pendingItems.slice(0, 2).map((tx) => (
-                                    <li key={tx.id} className="flex items-center justify-between py-3">
-                                        <div>
-                                            <p className="text-sm font-medium">{tx.notes ?? `Invoice #${tx.id}`}</p>
-                                            <p className="text-xs text-muted-foreground">Pending payment</p>
-                                        </div>
-                                        <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500">
-                                            ₱{Number(tx.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -62,7 +62,7 @@ export default function CustomerLogs() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
                 {/* Page heading */}
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Transaction Logs</h1>
@@ -133,7 +133,7 @@ export default function CustomerLogs() {
                 </div>
 
                 {/* ── Log Entries ──────────────────────────────────────────── */}
-                <div className="flex flex-col gap-3">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
                     {error && (
                         <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
                             <AlertCircle className="h-4 w-4 shrink-0" />
