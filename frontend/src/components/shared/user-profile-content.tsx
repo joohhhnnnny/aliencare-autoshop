@@ -81,7 +81,7 @@ export function UserProfileContent() {
     const vehicleCount = customer?.vehicles.length ?? 0;
 
     return (
-        <div className="flex h-full flex-1 flex-col gap-4 p-6">
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden p-6">
             <h1 className="text-xl font-bold tracking-tight">User Profile</h1>
 
             {/* Hero */}
@@ -113,8 +113,9 @@ export function UserProfileContent() {
                 </div>
             </div>
 
-            {/* Two-column grid */}
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                {/* Two-column grid */}
+                <div className="grid gap-4 lg:grid-cols-2">
                 {/* Left column */}
                 <div className="flex flex-col gap-4">
                     {/* Personal Information */}
@@ -299,6 +300,7 @@ export function UserProfileContent() {
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 

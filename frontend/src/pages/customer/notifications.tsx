@@ -85,7 +85,7 @@ export default function CustomerNotifications() {
 
     return (
         <CustomerLayout>
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
                 {/* Page header */}
                 <div className="flex items-center justify-between">
                     <div>
@@ -103,9 +103,9 @@ export default function CustomerNotifications() {
                 </div>
 
                 {/* Main content — two-column on large screens */}
-                <div className="flex flex-1 gap-6 lg:items-start">
+                <div className="flex min-h-0 flex-1 gap-6 overflow-hidden lg:items-start">
                     {/* Left: notification feed */}
-                    <div className="flex min-w-0 flex-1 flex-col gap-4">
+                    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
                         {/* Category tabs */}
                         <div className="flex gap-1 overflow-x-auto rounded-xl border border-[#2a2a2e] bg-[#0d0d10] p-1">
                             {(Object.keys(CATEGORY_LABELS) as NotifCategory[]).map((tab) => (
@@ -128,7 +128,7 @@ export default function CustomerNotifications() {
                                 <p className="text-sm text-muted-foreground">No notifications here yet.</p>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
                                 {filtered.map((notif) => {
                                     const Icon = CATEGORY_ICON[notif.category] ?? Bell;
                                     return (
@@ -168,7 +168,7 @@ export default function CustomerNotifications() {
                     </div>
 
                     {/* Right: summary sidebar (visible on lg+) */}
-                    <div className="hidden w-72 shrink-0 flex-col gap-4 lg:flex">
+                    <div className="hidden w-72 shrink-0 flex-col gap-4 overflow-y-auto lg:flex">
                         {/* Summary card */}
                         <div className="rounded-xl border border-[#2a2a2e] bg-[#0d0d10] p-5">
                             <p className="mb-4 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Summary</p>

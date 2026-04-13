@@ -54,8 +54,13 @@ export const useAlerts = (initialFilters: AlertFilters = {}): UseAlertsReturn =>
                 setLoading(true);
                 setError(null);
 
-                const newFilters = { ...currentFilters, ...filters };
-                setCurrentFilters(newFilters);
+                const hasIncomingFilters = Object.keys(filters).length > 0;
+                const newFilters = hasIncomingFilters ? { ...currentFilters, ...filters } : currentFilters;
+
+                // Avoid updating filter state on every fetch call to prevent render loops.
+                if (hasIncomingFilters) {
+                    setCurrentFilters(newFilters);
+                }
 
                 console.log('Fetching alerts with filters:', newFilters);
                 const response = await alertService.getAlerts(newFilters);

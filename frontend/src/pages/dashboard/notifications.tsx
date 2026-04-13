@@ -85,7 +85,7 @@ export default function FrontdeskNotifications() {
 
     return (
         <AppLayout>
-            <div className="mx-auto max-w-2xl p-5">
+            <div className="min-h-full p-5">
                 {/* Page header */}
                 <div className="mb-6 flex items-center justify-between">
                     <div>

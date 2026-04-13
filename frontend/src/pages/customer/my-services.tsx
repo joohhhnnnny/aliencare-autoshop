@@ -222,7 +222,7 @@ function BookingDetailView({ booking, onBack }: { booking: Booking; onBack: () =
     const isCanceled = booking.status === 'Canceled';
 
     return (
-        <div className="flex flex-col gap-6 p-5 pb-10">
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-5 pb-10">
             {/* Back */}
             <button
                 onClick={onBack}
@@ -246,9 +246,9 @@ function BookingDetailView({ booking, onBack }: { booking: Booking; onBack: () =
                 <span className="text-sm text-muted-foreground">Booked on {booking.bookedOn}</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_300px]">
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto xl:grid-cols-[1fr_300px] xl:overflow-hidden">
                 {/* ── MAIN CONTENT ──────────────────────────────────────── */}
-                <div className="flex flex-col gap-5">
+                <div className="flex min-h-0 flex-col gap-5 xl:overflow-y-auto xl:pr-1">
                     {/* 4 info stat cards */}
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                         {/* Arrival */}
@@ -467,7 +467,7 @@ function BookingDetailView({ booking, onBack }: { booking: Booking; onBack: () =
                 </div>
 
                 {/* ── BOOKING SUMMARY (right sticky panel) ─────────────── */}
-                <div className="profile-card sticky top-5 flex flex-col gap-4 rounded-xl p-5">
+                <div className="profile-card flex min-h-0 flex-col gap-4 rounded-xl p-5 xl:overflow-y-auto">
                     <p className="text-base font-bold">Booking Summary</p>
 
                     {/* Status rows */}
@@ -589,6 +589,7 @@ export default function MyServices() {
     );
 
     const selected = bookings.find((b) => b.id === selectedId) ?? visibleBookings[0] ?? bookings[0];
+    const hasSelectedBooking = Boolean(selected);
     const detailBooking = bookings.find((b) => b.id === viewingDetailId);
 
     // ── Full detail page view ─────────────────────────────────────────────────
@@ -602,9 +603,13 @@ export default function MyServices() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="grid min-h-full grid-cols-1 items-start gap-5 p-5 xl:grid-cols-[1fr_340px]">
+            <div
+                className={`grid h-full min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto p-5 xl:items-stretch xl:overflow-hidden ${
+                    hasSelectedBooking ? 'xl:grid-cols-[1fr_340px]' : 'xl:grid-cols-1'
+                }`}
+            >
                 {/* ── LEFT: Bookings list ───────────────────────────────────── */}
-                <div className="flex flex-col gap-4">
+                <div className="flex min-h-0 flex-col gap-4">
                     {/* Filter / Sort row */}
                     <div className="flex items-center justify-end gap-2">
                         <button className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2e] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
@@ -648,7 +653,7 @@ export default function MyServices() {
                     </div>
 
                     {/* Booking cards */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                                 <p className="text-sm">Loading job orders…</p>
@@ -699,7 +704,7 @@ export default function MyServices() {
 
                 {/* ── RIGHT: Detail panel ───────────────────────────────────── */}
                 {selected && (
-                    <div className="profile-card sticky top-5 flex flex-col gap-4 rounded-xl p-5">
+                    <div className="profile-card flex min-h-0 flex-col gap-4 rounded-xl p-5 xl:overflow-y-auto">
                         {/* Service Header */}
                         <div className="flex items-start justify-between gap-3">
                             <div className="flex flex-col gap-1">

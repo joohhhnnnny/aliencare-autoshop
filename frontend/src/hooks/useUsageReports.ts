@@ -47,6 +47,249 @@ export interface UseUsageReportsProps {
     selectedCategory?: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    return fallback;
+}
+
+function toStringValue(value: unknown, fallback = ''): string {
+    return typeof value === 'string' ? value : fallback;
+}
+
+function createEmptyAnalytics(startDate: string, endDate: string): UsageAnalytics {
+    return {
+        date_range: {
+            start_date: startDate,
+            end_date: endDate,
+        },
+        summary: {
+            total_consumed: 0,
+            total_cost: 0,
+            unique_items_used: 0,
+            most_used_item: null,
+            active_categories: 0,
+        },
+        usage_by_item: [],
+        category_breakdown: [],
+        top_consumed_items: [],
+    };
+}
+
+function normalizeUsageItem(raw: unknown): UsageReportData | null {
+    if (!isRecord(raw)) {
+        return null;
+    }
+
+    const itemId = toNumber(raw.item_id);
+    const itemName = toStringValue(raw.item_name, 'Unknown Item');
+    const partNumber = toStringValue(raw.part_number, itemId > 0 ? `ITEM-${itemId}` : 'N/A');
+    const description = toStringValue(raw.description, 'No description available');
+    const category = toStringValue(raw.category, 'General');
+    const consumed = toNumber(raw.consumed, toNumber(raw.transaction_count, toNumber(raw.count)));
+    const cost = toNumber(raw.cost);
+    const unitPrice = toNumber(raw.unit_price);
+    const transactionCount = toNumber(raw.transaction_count, toNumber(raw.count, consumed));
+
+    return {
+        item_id: itemId,
+        item_name: itemName,
+        part_number: partNumber,
+        description,
+        category,
+        consumed,
+        cost,
+        unit_price: unitPrice,
+        transaction_count: transactionCount,
+    };
+}
+
+function normalizeCategoryItem(raw: unknown): CategoryData | null {
+    if (!isRecord(raw)) {
+        return null;
+    }
+
+    const category = toStringValue(raw.category, 'General');
+    const consumed = toNumber(raw.consumed, toNumber(raw.quantity));
+    const cost = toNumber(raw.cost, toNumber(raw.value));
+    const itemCount = toNumber(raw.item_count, toNumber(raw.count));
+
+    return {
+        category,
+        consumed,
+        cost,
+        item_count: itemCount,
+    };
+}
+
+function deriveCategoryBreakdown(items: UsageReportData[]): CategoryData[] {
+    const grouped = items.reduce<Record<string, CategoryData>>((acc, item) => {
+        const key = item.category || 'General';
+        if (!acc[key]) {
+            acc[key] = {
+                category: key,
+                consumed: 0,
+                cost: 0,
+                item_count: 0,
+            };
+        }
+
+        acc[key].consumed += item.consumed;
+        acc[key].cost += item.cost;
+        acc[key].item_count += 1;
+        return acc;
+    }, {});
+
+    return Object.values(grouped);
+}
+
+function normalizeAnalyticsPayload(rawData: unknown, fallbackStartDate: string, fallbackEndDate: string): UsageAnalytics {
+    const empty = createEmptyAnalytics(fallbackStartDate, fallbackEndDate);
+
+    if (!isRecord(rawData)) {
+        return empty;
+    }
+
+    const hasModernShape =
+        Array.isArray(rawData.usage_by_item) || Array.isArray(rawData.category_breakdown) || Array.isArray(rawData.top_consumed_items) || isRecord(rawData.summary);
+
+    if (hasModernShape) {
+        const usageByItem = Array.isArray(rawData.usage_by_item)
+            ? rawData.usage_by_item.map((entry) => normalizeUsageItem(entry)).filter((entry): entry is UsageReportData => entry !== null)
+            : [];
+
+        const categoryBreakdown = Array.isArray(rawData.category_breakdown)
+            ? rawData.category_breakdown.map((entry) => normalizeCategoryItem(entry)).filter((entry): entry is CategoryData => entry !== null)
+            : deriveCategoryBreakdown(usageByItem);
+
+        const topConsumedItems = Array.isArray(rawData.top_consumed_items)
+            ? rawData.top_consumed_items.map((entry) => normalizeUsageItem(entry)).filter((entry): entry is UsageReportData => entry !== null)
+            : [...usageByItem].sort((a, b) => b.consumed - a.consumed).slice(0, 10);
+
+        const dateSource = isRecord(rawData.date_range)
+            ? rawData.date_range
+            : isRecord(rawData.period)
+              ? rawData.period
+              : null;
+
+        const summarySource = isRecord(rawData.summary) ? rawData.summary : null;
+        const calculatedTotalConsumed = usageByItem.reduce((sum, item) => sum + item.consumed, 0);
+        const calculatedTotalCost = usageByItem.reduce((sum, item) => sum + item.cost, 0);
+        const mostUsedFromItems = [...usageByItem].sort((a, b) => b.consumed - a.consumed)[0];
+        const mostUsedSource = summarySource && isRecord(summarySource.most_used_item) ? summarySource.most_used_item : null;
+
+        return {
+            date_range: {
+                start_date: toStringValue(dateSource?.start_date, fallbackStartDate),
+                end_date: toStringValue(dateSource?.end_date, fallbackEndDate),
+            },
+            summary: {
+                total_consumed: toNumber(summarySource?.total_consumed, calculatedTotalConsumed),
+                total_cost: toNumber(summarySource?.total_cost, calculatedTotalCost),
+                unique_items_used: toNumber(summarySource?.unique_items_used, usageByItem.length),
+                most_used_item: mostUsedSource
+                    ? {
+                          part_number: toStringValue(mostUsedSource.part_number, mostUsedFromItems?.part_number || 'N/A'),
+                          item_name: toStringValue(mostUsedSource.item_name, mostUsedFromItems?.item_name || 'Unknown Item'),
+                          consumed: toNumber(mostUsedSource.consumed, mostUsedFromItems?.consumed || 0),
+                      }
+                    : mostUsedFromItems
+                      ? {
+                            part_number: mostUsedFromItems.part_number,
+                            item_name: mostUsedFromItems.item_name,
+                            consumed: mostUsedFromItems.consumed,
+                        }
+                      : null,
+                active_categories: toNumber(summarySource?.active_categories, categoryBreakdown.filter((entry) => entry.consumed > 0).length),
+            },
+            usage_by_item: usageByItem,
+            category_breakdown: categoryBreakdown,
+            top_consumed_items: topConsumedItems,
+        };
+    }
+
+    const hasLegacyShape = Array.isArray(rawData.top_items) || isRecord(rawData.by_type) || isRecord(rawData.period);
+    if (!hasLegacyShape) {
+        return empty;
+    }
+
+    const usageByItem = Array.isArray(rawData.top_items)
+        ? rawData.top_items
+              .map((entry) => {
+                  if (!isRecord(entry)) {
+                      return null;
+                  }
+
+                  return normalizeUsageItem({
+                      item_id: entry.item_id,
+                      item_name: entry.item_name,
+                      part_number: entry.part_number ?? entry.item_id,
+                      description: entry.description,
+                      category: entry.category,
+                      consumed: entry.consumed ?? entry.transaction_count ?? entry.count,
+                      cost: entry.cost,
+                      unit_price: entry.unit_price,
+                      transaction_count: entry.transaction_count ?? entry.count,
+                  });
+              })
+              .filter((entry): entry is UsageReportData => entry !== null)
+        : [];
+
+    const byTypeEntries = isRecord(rawData.by_type) ? Object.entries(rawData.by_type) : [];
+    const categoryBreakdown = byTypeEntries.length
+        ? byTypeEntries
+              .map(([category, value]) =>
+                  normalizeCategoryItem({
+                      category,
+                      consumed: isRecord(value) ? value.quantity ?? value.consumed ?? value.count : 0,
+                      cost: isRecord(value) ? value.cost ?? value.value : 0,
+                      item_count: isRecord(value) ? value.count : 0,
+                  }),
+              )
+              .filter((entry): entry is CategoryData => entry !== null)
+        : deriveCategoryBreakdown(usageByItem);
+
+    const topConsumedItems = [...usageByItem].sort((a, b) => b.consumed - a.consumed).slice(0, 10);
+    const dateSource = isRecord(rawData.period) ? rawData.period : null;
+    const totalConsumed = usageByItem.reduce((sum, item) => sum + item.consumed, 0);
+    const totalCost = usageByItem.reduce((sum, item) => sum + item.cost, 0);
+    const mostUsed = topConsumedItems[0] ?? null;
+
+    return {
+        date_range: {
+            start_date: toStringValue(dateSource?.start_date, fallbackStartDate),
+            end_date: toStringValue(dateSource?.end_date, fallbackEndDate),
+        },
+        summary: {
+            total_consumed: totalConsumed,
+            total_cost: totalCost,
+            unique_items_used: usageByItem.length,
+            most_used_item: mostUsed
+                ? {
+                      part_number: mostUsed.part_number,
+                      item_name: mostUsed.item_name,
+                      consumed: mostUsed.consumed,
+                  }
+                : null,
+            active_categories: categoryBreakdown.filter((entry) => entry.consumed > 0).length,
+        },
+        usage_by_item: usageByItem,
+        category_breakdown: categoryBreakdown,
+        top_consumed_items: topConsumedItems,
+    };
+}
+
 export function useUsageReports({ reportPeriod = 'daily', selectedCategory = 'all' }: UseUsageReportsProps = {}) {
     const [data, setData] = useState<UsageAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
@@ -73,10 +316,13 @@ export function useUsageReports({ reportPeriod = 'daily', selectedCategory = 'al
                     break;
             }
 
-            const response = await reportsService.getUsageAnalytics(startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
+            const fallbackStartDate = startDate.toISOString().split('T')[0];
+            const fallbackEndDate = endDate.toISOString().split('T')[0];
+
+            const response = await reportsService.getUsageAnalytics(fallbackStartDate, fallbackEndDate);
 
             if (response.success) {
-                setData(response.data);
+                setData(normalizeAnalyticsPayload(response.data, fallbackStartDate, fallbackEndDate));
             } else {
                 setError('Failed to fetch usage analytics');
             }

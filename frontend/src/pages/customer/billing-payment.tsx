@@ -167,7 +167,7 @@ function ReceiptDetail({ receipt, onBack }: { receipt: ReceiptRecord; onBack: ()
     };
 
     return (
-        <div className="flex h-full flex-1 flex-col gap-6 p-6">
+        <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
             {/* Back */}
             <button
                 onClick={onBack}
@@ -177,8 +177,9 @@ function ReceiptDetail({ receipt, onBack }: { receipt: ReceiptRecord; onBack: ()
                 Back to Billing &amp; Payment
             </button>
 
-            {/* Receipt card */}
-            <div ref={receiptRef} className="profile-card mx-auto w-full max-w-2xl rounded-2xl p-8">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                {/* Receipt card */}
+                <div ref={receiptRef} className="profile-card mx-auto w-full max-w-2xl rounded-2xl p-8">
                 {/* Brand + Paid badge */}
                 <div className="flex items-start justify-between">
                     <div>
@@ -304,22 +305,23 @@ function ReceiptDetail({ receipt, onBack }: { receipt: ReceiptRecord; onBack: ()
                 <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
                     Thank you! This receipt indicates that your full payment has been received for the requested services.
                 </p>
-            </div>
+                </div>
 
-            {/* Action buttons */}
-            <div className="mx-auto flex w-full max-w-2xl gap-3">
-                <button
-                    onClick={handlePrint}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#2a2a2e] py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[#1e1e22]"
-                >
-                    <Download className="h-4 w-4" /> Download PDF
-                </button>
-                <button
-                    onClick={handlePrint}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#d4af37] py-2.5 text-sm font-bold text-black shadow-[0_4px_16px_rgba(212,175,55,0.35)] transition-opacity hover:opacity-90"
-                >
-                    <Printer className="h-4 w-4" /> Print Receipt
-                </button>
+                {/* Action buttons */}
+                <div className="mx-auto mt-6 flex w-full max-w-2xl gap-3">
+                    <button
+                        onClick={handlePrint}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#2a2a2e] py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[#1e1e22]"
+                    >
+                        <Download className="h-4 w-4" /> Download PDF
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#d4af37] py-2.5 text-sm font-bold text-black shadow-[0_4px_16px_rgba(212,175,55,0.35)] transition-opacity hover:opacity-90"
+                    >
+                        <Printer className="h-4 w-4" /> Print Receipt
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -381,11 +383,13 @@ export default function BillingPayment() {
 
     return (
         <CustomerLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-6 overflow-hidden p-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Billing & Payment</h1>
                     <p className="text-muted-foreground">Manage your payments and billing history.</p>
                 </div>
+
+                <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
 
                 {/* Loading / Error state */}
                 {billingError && (
@@ -614,6 +618,7 @@ export default function BillingPayment() {
                         ))}
                     </div>
                 )}
+                </div>
             </div>
         </CustomerLayout>
     );
