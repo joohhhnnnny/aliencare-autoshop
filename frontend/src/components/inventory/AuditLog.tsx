@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useAuditLog } from '../../hooks/useAuditLog';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -105,55 +104,55 @@ export function AuditLog() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Transactions</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Transactions</p>
                         <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">{loading ? '...' : stats.total_transactions}</div>
                         <p className="text-xs text-muted-foreground">All recorded transactions</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Today's Activity</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Today's Activity</p>
                         <Clock className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.today_transactions}</div>
                         <p className="text-xs text-muted-foreground">Transactions today</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Active Users</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Active Users</p>
                         <User className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">{loading ? '...' : stats.unique_users}</div>
                         <p className="text-xs text-muted-foreground">Users with activity</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Data Integrity</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Data Integrity</p>
                         <Shield className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">100%</div>
                         <p className="text-xs text-muted-foreground">Audit compliance</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Transaction Filters</CardTitle>
-                    <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="profile-card overflow-hidden rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Transaction Filters</h3>
+                    <div className="mt-3 flex flex-col gap-4 sm:flex-row">
                         <div className="relative flex-1">
                             <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -190,16 +189,15 @@ export function AuditLog() {
                             </SelectContent>
                         </Select>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
+                </div>
+                {loading ? (
                         <div className="py-8 text-center">
                             <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-muted-foreground" />
                             <div className="text-muted-foreground">Loading audit data...</div>
                         </div>
                     ) : (
                         <>
-                            <div className="rounded-md border border-border">
+                            <div className="overflow-auto">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="border-border">
@@ -247,20 +245,19 @@ export function AuditLog() {
                                             })}
                                     </TableBody>
                                 </Table>
-                            </div>
-                            {filteredTransactions.length === 0 && (
-                                <div className="py-8 text-center text-muted-foreground">No transactions found matching your criteria</div>
-                            )}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                                </div>
+                                {filteredTransactions.length === 0 && (
+                                    <div className="py-8 text-center text-muted-foreground">No transactions found matching your criteria</div>
+                                )}
+                            </>
+                        )}
+            </div>
 
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Audit Trail Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <div className="profile-card rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Audit Trail Summary</h3>
+                </div>
+                <div className="space-y-4 p-5 pt-0">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                             <h4 className="font-medium text-foreground">Transaction Types</h4>
@@ -291,8 +288,8 @@ export function AuditLog() {
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

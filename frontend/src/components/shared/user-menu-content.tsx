@@ -14,6 +14,12 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const settingsHrefByRole: Record<User['role'], string> = {
+        frontdesk: '/settings',
+        admin: '/admin/settings',
+        customer: '/customer/settings',
+    };
+    const settingsHref = settingsHrefByRole[user.role] ?? '/settings';
 
     const handleLogout = async () => {
         cleanup();
@@ -31,7 +37,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <Link className="block w-full" to="/settings/profile" onClick={cleanup}>
+                    <Link className="block w-full" to={settingsHref} onClick={cleanup}>
                         <Settings className="mr-2" />
                         Settings
                     </Link>

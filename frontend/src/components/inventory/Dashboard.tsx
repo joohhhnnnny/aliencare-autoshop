@@ -4,7 +4,6 @@ import type { InventoryItem, StockTransaction } from '@/types/inventory';
 import { AlertTriangle, Clock, Loader2, Package, TrendingDown } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 interface TopCategory {
     category: string;
@@ -47,12 +46,12 @@ export function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Parts</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Parts</p>
                         <Package className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -64,15 +63,15 @@ export function Dashboard() {
                                 <p className="text-xs text-muted-foreground">Active inventory items</p>
                             </>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Low Stock Items</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Low Stock Items</p>
                         <TrendingDown className="h-4 w-4 text-destructive" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -84,15 +83,15 @@ export function Dashboard() {
                                 <p className="text-xs text-muted-foreground">Below minimum threshold</p>
                             </>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Value</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Value</p>
                         <PesoIcon className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,15 +108,15 @@ export function Dashboard() {
                                 <p className="text-xs text-muted-foreground">Current inventory value</p>
                             </>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Active Reservations</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Active Reservations</p>
                         <Clock className="h-4 w-4 text-blue-600" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -129,16 +128,16 @@ export function Dashboard() {
                                 <p className="text-xs text-muted-foreground">Pending approval and processing</p>
                             </>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-foreground">Low Stock Alerts</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-3">
+                        <h3 className="font-semibold text-foreground">Low Stock Alerts</h3>
+                    </div>
+                    <div className="space-y-3 p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -165,14 +164,14 @@ export function Dashboard() {
                         ) : (
                             <p className="text-sm text-muted-foreground">No low stock alerts</p>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-foreground">Recent Transactions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-3">
+                        <h3 className="font-semibold text-foreground">Recent Transactions</h3>
+                    </div>
+                    <div className="space-y-3 p-5 pt-0">
                         {isLoading ? (
                             <div className="flex items-center space-x-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -199,16 +198,16 @@ export function Dashboard() {
                         ) : (
                             <p className="text-sm text-muted-foreground">No recent transactions</p>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             {/* Top Categories */}
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Top Categories by Value</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <div className="profile-card rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Top Categories by Value</h3>
+                </div>
+                <div className="p-5 pt-0">
                     {isLoading ? (
                         <div className="flex items-center space-x-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -237,8 +236,8 @@ export function Dashboard() {
                     ) : (
                         <p className="text-sm text-muted-foreground">No category data available</p>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }

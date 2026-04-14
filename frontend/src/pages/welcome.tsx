@@ -142,18 +142,18 @@ export default function Welcome() {
                         {/* Trust badge */}
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#D9AF01]/30 bg-[#D9AF01]/10 px-4 py-1.5 text-xs font-semibold tracking-wider text-[#D9AF01] uppercase">
                             <Star className="h-3 w-3 fill-[#D9AF01]" />
-                            Trusted by Davao's Drivers Since 2015
+                            EST 2015
                         </div>
 
                         {/* Headline */}
                         <h1 className="mb-4 text-5xl leading-[1.05] font-black tracking-tight text-[#EDEDEC] lg:text-7xl">
-                            Your Car.
+                            Alien Care Autoshop
                             <br />
                             <span
                                 className="bg-linear-to-r from-[#D9AF01] via-[#f0cc30] to-[#D9AF01] bg-clip-text text-transparent"
                                 style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                             >
-                                Cosmic Care.
+                                Sales and Services
                             </span>
                         </h1>
 
@@ -188,13 +188,11 @@ export default function Welcome() {
 
                     {/* Right: Car Visual */}
                     <div className="relative mt-6 flex w-full max-w-sm items-end justify-center lg:mt-0 lg:max-w-none lg:flex-1">
-                        {/* Glow under car */}
-                        <div className="absolute bottom-0 left-1/2 h-20 w-3/4 -translate-x-1/2 rounded-full bg-[#D9AF01]/20 blur-2xl" />
                         <img
                             src="/images/hondacar.png"
                             alt="AlienCare Auto Shop Vehicle"
                             className="relative z-10 h-auto w-full drop-shadow-2xl"
-                            style={{ filter: 'drop-shadow(0 20px 60px rgba(217,175,1,0.15))' }}
+                            style={{ filter: 'drop-shadow(0 20px 60px rgba(0,0,0,0.45))' }}
                         />
                         <img
                             src="/images/certified-mechanics-badge.svg"

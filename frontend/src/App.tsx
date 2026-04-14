@@ -3,7 +3,6 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 // Layouts
 import AuthLayout from '@/components/layout/auth-layout';
-import SettingsLayout from '@/components/layout/settings/layout';
 
 // Public pages
 import AboutUs from '@/pages/aboutus';
@@ -27,12 +26,8 @@ import JobOrders from '@/pages/dashboard/job-orders';
 import PointOfSale from '@/pages/dashboard/pos';
 import FrontdeskProfile from '@/pages/dashboard/profile';
 import Reports from '@/pages/dashboard/reports';
+import FrontdeskSettings from '@/pages/dashboard/settings';
 import Services from '@/pages/dashboard/services';
-
-// Settings pages
-import Appearance from '@/pages/settings/appearance';
-import Password from '@/pages/settings/password';
-import Profile from '@/pages/settings/profile';
 
 // Admin pages
 import AdminBookingSlots from '@/pages/admin/booking-slots';
@@ -116,31 +111,10 @@ export default function App() {
                 <Route path="/verify-email" element={<VerifyEmail />} />
 
                 {/* Settings */}
-                <Route path="/settings" element={<Navigate to="/settings/profile" replace />} />
-                <Route
-                    path="/settings/profile"
-                    element={
-                        <SettingsLayout>
-                            <Profile />
-                        </SettingsLayout>
-                    }
-                />
-                <Route
-                    path="/settings/password"
-                    element={
-                        <SettingsLayout>
-                            <Password />
-                        </SettingsLayout>
-                    }
-                />
-                <Route
-                    path="/settings/appearance"
-                    element={
-                        <SettingsLayout>
-                            <Appearance />
-                        </SettingsLayout>
-                    }
-                />
+                <Route path="/settings" element={<FrontdeskSettings />} />
+                <Route path="/settings/profile" element={<Navigate to="/settings" replace />} />
+                <Route path="/settings/password" element={<Navigate to="/settings" replace />} />
+                <Route path="/settings/appearance" element={<Navigate to="/settings" replace />} />
             </Route>
 
             {/* Admin protected routes */}

@@ -613,49 +613,53 @@ export default function Billing() {
                                     />
                                 </div>
 
-                                <div className="flex flex-wrap gap-2">
-                                    {(
-                                        [
-                                            { key: 'all', label: 'All Sources' },
-                                            { key: 'online', label: 'Online Booking' },
-                                            { key: 'walkin', label: 'Walk-in' },
-                                        ] as Array<{ key: SourceFilter; label: string }>
-                                    ).map((item) => (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => setSourceFilter(item.key)}
-                                            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                                sourceFilter === item.key
-                                                    ? 'bg-[#d4af37] text-black shadow-[0_0_12px_rgba(212,175,55,0.3)]'
-                                                    : 'border border-[#2a2a2e] text-muted-foreground hover:border-[#d4af37]/40 hover:text-foreground'
-                                            }`}
-                                        >
-                                            {item.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                <div className="flex items-center gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                    <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#2a2a2e] bg-[#0d0d10] p-1">
+                                        {(
+                                            [
+                                                { key: 'all', label: 'All Sources' },
+                                                { key: 'online', label: 'Online Booking' },
+                                                { key: 'walkin', label: 'Walk-in' },
+                                            ] as Array<{ key: SourceFilter; label: string }>
+                                        ).map((item) => (
+                                            <button
+                                                key={item.key}
+                                                onClick={() => setSourceFilter(item.key)}
+                                                className={`rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                                                    sourceFilter === item.key
+                                                        ? 'bg-[#d4af37] text-black shadow-[0_0_12px_rgba(212,175,55,0.3)]'
+                                                        : 'text-muted-foreground hover:bg-[#1a1b20] hover:text-foreground'
+                                                }`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
 
-                                <div className="flex flex-wrap gap-2">
-                                    {(
-                                        [
-                                            { key: 'all', label: 'All Status' },
-                                            { key: 'pending', label: 'Pending' },
-                                            { key: 'partial', label: 'Partial' },
-                                            { key: 'paid', label: 'Paid' },
-                                        ] as Array<{ key: StatusFilter; label: string }>
-                                    ).map((item) => (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => setStatusFilter(item.key)}
-                                            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                                statusFilter === item.key
-                                                    ? 'bg-[#d4af37] text-black shadow-[0_0_12px_rgba(212,175,55,0.3)]'
-                                                    : 'border border-[#2a2a2e] text-muted-foreground hover:border-[#d4af37]/40 hover:text-foreground'
-                                            }`}
-                                        >
-                                            {item.label}
-                                        </button>
-                                    ))}
+                                    <span className="h-6 w-px shrink-0 bg-[#2a2a2e]" aria-hidden="true" />
+
+                                    <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#2a2a2e] bg-[#0d0d10] p-1">
+                                        {(
+                                            [
+                                                { key: 'all', label: 'All Status' },
+                                                { key: 'pending', label: 'Pending' },
+                                                { key: 'partial', label: 'Partial' },
+                                                { key: 'paid', label: 'Paid' },
+                                            ] as Array<{ key: StatusFilter; label: string }>
+                                        ).map((item) => (
+                                            <button
+                                                key={item.key}
+                                                onClick={() => setStatusFilter(item.key)}
+                                                className={`rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                                                    statusFilter === item.key
+                                                        ? 'bg-[#d4af37] text-black shadow-[0_0_12px_rgba(212,175,55,0.3)]'
+                                                        : 'text-muted-foreground hover:bg-[#1a1b20] hover:text-foreground'
+                                                }`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 

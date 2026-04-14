@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useAlerts } from '../../hooks/useAlerts';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 export function StockAlerts() {
     const {
@@ -193,47 +192,47 @@ export function StockAlerts() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Critical Alerts</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Critical Alerts</p>
                         <AlertTriangle className="h-4 w-4 text-destructive" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-destructive">{statistics?.critical_alerts || 0}</div>
                         <p className="text-xs text-muted-foreground">Immediate attention required</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">High Priority</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">High Priority</p>
                         <AlertTriangle className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">{statistics?.high_priority_alerts || 0}</div>
                         <p className="text-xs text-muted-foreground">Action needed soon</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Unacknowledged</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Unacknowledged</p>
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">{statistics?.unacknowledged_alerts || 0}</div>
                         <p className="text-xs text-muted-foreground">Pending review</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between text-foreground">
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-3">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-destructive" />
-                                Unacknowledged Alerts
+                                <h3 className="font-semibold text-foreground">Unacknowledged Alerts</h3>
                             </div>
                             {unacknowledgedAlerts.length > 0 && (
                                 <div className="flex gap-2">
@@ -247,9 +246,9 @@ export function StockAlerts() {
                                     )}
                                 </div>
                             )}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                        </div>
+                    </div>
+                    <div className="space-y-4 p-5 pt-0">
                         {loading ? (
                             <div className="py-8 text-center text-muted-foreground">
                                 <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin" />
@@ -257,7 +256,7 @@ export function StockAlerts() {
                             </div>
                         ) : unacknowledgedAlerts.length > 0 ? (
                             unacknowledgedAlerts.map((alert) => (
-                                <div key={alert.id} className="space-y-3 rounded-lg border border-border bg-card p-4">
+                                <div key={alert.id} className="space-y-3 rounded-lg border border-[#2a2a2e] bg-[#0d0d10]/60 p-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <input
@@ -310,17 +309,17 @@ export function StockAlerts() {
                                 <p>All alerts have been acknowledged</p>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-foreground">
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-3">
+                        <div className="flex items-center gap-2">
                             <CheckCircle className="h-5 w-5 text-primary" />
-                            Acknowledged Alerts
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                            <h3 className="font-semibold text-foreground">Acknowledged Alerts</h3>
+                        </div>
+                    </div>
+                    <div className="space-y-4 p-5 pt-0">
                         {loading ? (
                             <div className="py-8 text-center text-muted-foreground">
                                 <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin" />
@@ -328,7 +327,7 @@ export function StockAlerts() {
                             </div>
                         ) : acknowledgedAlerts.length > 0 ? (
                             acknowledgedAlerts.map((alert) => (
-                                <div key={alert.id} className="space-y-3 rounded-lg border border-border bg-card p-4 opacity-75">
+                                <div key={alert.id} className="space-y-3 rounded-lg border border-[#2a2a2e] bg-[#0d0d10]/60 p-4 opacity-75">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <CheckCircle className="h-4 w-4 text-primary" />
@@ -355,8 +354,8 @@ export function StockAlerts() {
                                 <p>No acknowledged alerts</p>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

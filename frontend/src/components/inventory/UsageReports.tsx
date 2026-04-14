@@ -4,7 +4,6 @@ import { useUsageReports } from '../../hooks/useUsageReports';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
@@ -151,57 +150,57 @@ export function UsageReports() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Parts Consumed</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Parts Consumed</p>
                         <Package className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">{data.summary.total_consumed}</div>
                         <p className="text-xs text-muted-foreground">{reportPeriod} period</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Total Cost</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Total Cost</p>
                         <PesoIcon className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">₱{data.summary.total_cost.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">Parts consumption value</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Most Used Part</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Most Used Part</p>
                         <TrendingUp className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-lg font-bold text-foreground">{data.summary.most_used_item?.part_number || 'N/A'}</div>
                         <p className="text-xs text-muted-foreground">{data.summary.most_used_item?.consumed || 0} units consumed</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Active Categories</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Active Categories</p>
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">{data.summary.active_categories}</div>
                         <p className="text-xs text-muted-foreground">Categories with usage</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Card className="border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="text-foreground">Consumption by Category</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-3">
+                        <h3 className="font-semibold text-foreground">Consumption by Category</h3>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="flex flex-col items-start gap-8 lg:flex-row">
                             {/* Pie Chart */}
                             <div className="flex flex-1 justify-center">
@@ -300,14 +299,14 @@ export function UsageReports() {
                                     })}
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="pb-8">
-                        <CardTitle className="text-foreground">Top Consumed Parts</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4">
+                <div className="profile-card rounded-xl">
+                    <div className="p-5 pb-8">
+                        <h3 className="font-semibold text-foreground">Top Consumed Parts</h3>
+                    </div>
+                    <div className="p-5 pt-4">
                         <div className="space-y-10">
                             {/* Bar Chart */}
                             <div className="relative mt-8">
@@ -403,16 +402,15 @@ export function UsageReports() {
                                 })}
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Detailed Usage Report</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border border-border">
+            <div className="profile-card overflow-hidden rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Detailed Usage Report</h3>
+                </div>
+                <div className="overflow-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow className="border-border">
@@ -457,13 +455,12 @@ export function UsageReports() {
                                     );
                                 })}
                             </TableBody>
-                        </Table>
-                    </div>
-                    {usageItems.length === 0 && (
-                        <div className="py-8 text-center text-muted-foreground">No usage data found for the selected period and category</div>
-                    )}
-                </CardContent>
-            </Card>
+                </Table>
+                </div>
+                {usageItems.length === 0 && (
+                    <div className="py-8 text-center text-muted-foreground">No usage data found for the selected period and category</div>
+                )}
+            </div>
         </div>
     );
 }

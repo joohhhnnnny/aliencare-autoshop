@@ -5,7 +5,6 @@ import { InventoryItem } from '../../types/inventory';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -724,10 +723,10 @@ export function InventoryTable() {
                 </div>
             </div>
 
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Inventory Filters</CardTitle>
-                    <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="profile-card overflow-hidden rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Inventory Filters</h3>
+                    <div className="mt-3 flex flex-col gap-4 sm:flex-row">
                         <div className="relative flex-1">
                             <Search className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -762,10 +761,9 @@ export function InventoryTable() {
                             </SelectContent>
                         </Select>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border border-border">
-                        <Table>
+                </div>
+                <div className="overflow-auto">
+                    <Table>
                             <TableHeader>
                                 <TableRow className="border-border">
                                     <TableHead className="text-foreground">Part Number</TableHead>
@@ -819,12 +817,11 @@ export function InventoryTable() {
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
-                    {filteredParts.length === 0 && (
-                        <div className="py-8 text-center text-muted-foreground">No parts found matching your criteria</div>
-                    )}
-                </CardContent>
-            </Card>
+                </div>
+                {filteredParts.length === 0 && (
+                    <div className="py-8 text-center text-muted-foreground">No parts found matching your criteria</div>
+                )}
+            </div>
         </div>
     );
 }

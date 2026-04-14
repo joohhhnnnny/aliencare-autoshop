@@ -5,7 +5,6 @@ import { useReservations } from '../../hooks/useReservations';
 import { Reservation } from '../../types/inventory';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
@@ -782,8 +781,8 @@ export function ReservationPanel() {
 
             {/* Priority Alert for Pending Reservations */}
             {reservations.filter((r) => r.status === 'pending').length > 0 && (
-                <Card className="border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50 dark:border-yellow-700 dark:from-yellow-950/30 dark:to-orange-950/30">
-                    <CardContent className="p-4">
+                <div className="overflow-hidden rounded-xl border border-yellow-700 bg-linear-to-r from-yellow-950/30 to-orange-950/30">
+                    <div className="p-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
@@ -805,39 +804,39 @@ export function ReservationPanel() {
                                 <div className="text-xs text-orange-700 dark:text-orange-300">Review and approve below</div>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Active Reservations</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Active Reservations</p>
                         <Clock className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">{activeReservations.length}</div>
                         <p className="text-xs text-muted-foreground">Parts currently reserved</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Reserved Value</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Reserved Value</p>
                         <Package className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-foreground">₱{totalReservedValue.toFixed(2)}</div>
                         <p className="text-xs text-muted-foreground">Total reserved inventory value</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card className="border-border bg-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm">Completed Today</CardTitle>
+                <div className="profile-card rounded-xl">
+                    <div className="flex flex-row items-center justify-between p-5 pb-2">
+                        <p className="text-sm font-medium">Completed Today</p>
                         <CheckCircle className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="p-5 pt-0">
                         <div className="text-2xl font-bold text-primary">
                             {
                                 completedReservations.filter((r: Reservation) => new Date(r.updated_at).toDateString() === new Date().toDateString())
@@ -845,15 +844,15 @@ export function ReservationPanel() {
                             }
                         </div>
                         <p className="text-xs text-muted-foreground">Jobs completed today</p>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            <Card className="border-border bg-card">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Reservation Details</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <div className="profile-card rounded-xl">
+                <div className="p-5 pb-3">
+                    <h3 className="font-semibold text-foreground">Reservation Details</h3>
+                </div>
+                <div className="p-5 pt-0">
                     {/* Hierarchical Reservation Groups */}
                     <div className="space-y-4">
                         {groupReservationsByStatus(reservations).map(([status, statusReservations]) => {
@@ -905,7 +904,7 @@ export function ReservationPanel() {
 
                                         {/* Status Group Content */}
                                         <CollapsibleContent>
-                                            <div className="bg-card">
+                                            <div>
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow className="border-border bg-muted/30">
@@ -1070,8 +1069,8 @@ export function ReservationPanel() {
                             </div>
                         )}
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }
