@@ -190,6 +190,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
         Route::post('/', [JobOrderController::class, 'store'])->name('store');
         Route::get('/{id}', [JobOrderController::class, 'show'])->name('show');
         Route::put('/{id}', [JobOrderController::class, 'update'])->name('update');
+        Route::put('/{id}/submit', [JobOrderController::class, 'submit'])->name('submit');
         Route::put('/{id}/approve', [JobOrderController::class, 'approve'])->name('approve');
         Route::put('/{id}/start', [JobOrderController::class, 'start'])->name('start');
         Route::put('/{id}/complete', [JobOrderController::class, 'complete'])->name('complete');
