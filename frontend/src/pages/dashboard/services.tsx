@@ -328,9 +328,7 @@ export default function Services() {
                     </div>
 
                     {servicesError && (
-                        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                            {servicesError}
-                        </div>
+                        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">{servicesError}</div>
                     )}
 
                     <div className="grid gap-4 md:grid-cols-3">
@@ -609,7 +607,9 @@ export default function Services() {
                             </button>
                         </div>
 
-                        {submitError && <p className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">{submitError}</p>}
+                        {submitError && (
+                            <p className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">{submitError}</p>
+                        )}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid gap-3 md:grid-cols-2">
@@ -699,7 +699,9 @@ export default function Services() {
                                             getFieldError('estimatedDuration') ? 'border-red-500/60' : 'border-[#2a2a2e]'
                                         }`}
                                     />
-                                    {getFieldError('estimatedDuration') && <p className="text-xs text-red-400">{getFieldError('estimatedDuration')}</p>}
+                                    {getFieldError('estimatedDuration') && (
+                                        <p className="text-xs text-red-400">{getFieldError('estimatedDuration')}</p>
+                                    )}
                                 </label>
 
                                 <label className="space-y-1.5 text-sm">
@@ -856,10 +858,13 @@ export default function Services() {
                         </div>
 
                         <p className="text-sm text-muted-foreground">
-                            You are deactivating <span className="font-semibold text-foreground">{deleteTarget.name}</span>. Inactive services stay in records but no longer appear in customer listings.
+                            You are deactivating <span className="font-semibold text-foreground">{deleteTarget.name}</span>. Inactive services stay in
+                            records but no longer appear in customer listings.
                         </p>
 
-                        {deleteError && <p className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">{deleteError}</p>}
+                        {deleteError && (
+                            <p className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">{deleteError}</p>
+                        )}
 
                         <div className="mt-5 flex items-center justify-end gap-2">
                             <button
