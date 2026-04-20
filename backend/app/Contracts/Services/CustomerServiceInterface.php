@@ -39,6 +39,19 @@ interface CustomerServiceInterface
      */
     public function updateSpecialInfo(int $customerId, array $data, int $userId, ?string $ip = null): Customer;
 
+    public function updateActivation(int $customerId, bool $isActive, int $userId, ?string $ip = null): Customer;
+
+    /**
+     * @param  array<int, string>|null  $tierOverrides
+     */
+    public function updateTierSettings(
+        int $customerId,
+        string $tierMode,
+        ?array $tierOverrides,
+        int $userId,
+        ?string $ip = null,
+    ): Customer;
+
     /**
      * @param  array<string, mixed>  $filters
      */

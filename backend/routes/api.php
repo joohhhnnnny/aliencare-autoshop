@@ -212,6 +212,8 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
         Route::post('/', [CustomerController::class, 'store'])->name('store');
         Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
         Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
+        Route::patch('/{id}/activation', [CustomerController::class, 'updateActivation'])->name('activation.update');
+        Route::patch('/{id}/tiers', [CustomerController::class, 'updateTiers'])->name('tiers.update');
         Route::put('/{id}/approve', [CustomerController::class, 'approve'])->name('approve');
         Route::put('/{id}/reject', [CustomerController::class, 'reject'])->name('reject');
         Route::put('/{id}/request-delete', [CustomerController::class, 'requestDelete'])->name('request-delete');

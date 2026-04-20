@@ -256,6 +256,87 @@ class CustomerService implements CustomerServiceInterface
         });
     }
 
+    public function updateActivation(int $customerId, bool $isActive, int $userId, ?string $ip = null): Customer
+    {
+        return DB::transaction(function () use ($customerId, $isActive, $userId, $ip) {
+            $customer = $this->customerRepository->findByIdOrFail($customerId);
+            $oldData = [
+                'is_active' => (bool) ($customer->is_active ?? true),
+            ];
+
+            $customer = $this->customerRepository->updateActivation($customerId, $isActive);
+
+            $this->logAudit(
+                $customerId,
+                $userId,
+                'update',
+                'customer_activation',
+                $oldData,
+                ['is_active' => (bool) ($customer->is_active ?? false)],
+                $ip,
+            );
+
+            return $customer;
+        });
+    }
+
+    public function updateTierSettings(
+        int $customerId,
+        string $tierMode,
+        ?array $tierOverrides,
+        int $userId,
+        ?string $ip = null,
+    ): Customer {
+        return DB::transaction(function () use ($customerId, $tierMode, $tierOverrides, $userId, $ip) {
+            $customer = $this->customerRepository->findByIdOrFail($customerId);
+
+            $normalizedMode = strtolower(trim($tierMode));
+            if (! in_array($normalizedMode, ['auto', 'manual'], true)) {
+                throw new \InvalidArgumentException('Tier mode must be auto or manual.');
+            }
+
+            $normalizedOverrides = null;
+            if ($normalizedMode === 'manual') {
+                $incoming = is_array($tierOverrides) ? $tierOverrides : [];
+                $normalizedOverrides = array_values(array_unique(array_filter(array_map(
+                    static fn (mixed $tier): string => strtoupper(trim((string) $tier)),
+                    $incoming,
+                ), static fn (string $tier): bool => in_array($tier, ['VIP', 'FLEET'], true))));
+
+                $normalizedOverrides = array_map(
+                    static fn (string $tier): string => $tier === 'FLEET' ? 'Fleet' : 'VIP',
+                    $normalizedOverrides,
+                );
+            }
+
+            $oldData = [
+                'tier_mode' => (string) ($customer->tier_mode ?? 'auto'),
+                'tier_overrides' => $customer->tier_overrides,
+            ];
+
+            $customer = $this->customerRepository->updateTierSettings(
+                $customerId,
+                $normalizedMode,
+                $normalizedOverrides,
+            );
+
+            $this->logAudit(
+                $customerId,
+                $userId,
+                'update',
+                'customer_tiers',
+                $oldData,
+                [
+                    'tier_mode' => (string) ($customer->tier_mode ?? 'auto'),
+                    'tier_overrides' => $customer->tier_overrides,
+                ],
+                $ip,
+            );
+
+            return $customer;
+        });
+    }
+
     public function getAuditLog(int $customerId, array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $this->customerRepository->findByIdOrFail($customerId);

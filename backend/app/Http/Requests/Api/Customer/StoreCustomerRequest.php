@@ -20,6 +20,7 @@ class StoreCustomerRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', 'unique:customers,email'],
             'phone_number' => ['required', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
             'license_number' => ['nullable', 'string', 'max:50'],
         ];
     }

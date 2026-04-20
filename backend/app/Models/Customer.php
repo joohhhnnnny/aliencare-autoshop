@@ -22,6 +22,9 @@ class Customer extends Model
         'phone_number',
         'address',
         'license_number',
+        'is_active',
+        'tier_mode',
+        'tier_overrides',
         'preferred_contact_method',
         'special_notes',
         'onboarding_completed_at',
@@ -35,6 +38,8 @@ class Customer extends Model
     {
         return [
             'account_status' => AccountStatus::class,
+            'is_active' => 'boolean',
+            'tier_overrides' => 'array',
             'approved_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
         ];

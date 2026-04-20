@@ -22,8 +22,10 @@ class UpdateCustomerRequest extends FormRequest
             'last_name' => ['sometimes', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255', "unique:customers,email,{$customerId}"],
             'phone_number' => ['sometimes', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:255'],
             'license_number' => ['nullable', 'string', 'max:50'],
-            'status' => ['sometimes', 'string', 'in:active,inactive'],
+            'preferred_contact_method' => ['sometimes', 'nullable', 'string', 'in:sms,call,email'],
+            'special_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
         ];
     }
 }
