@@ -16,6 +16,8 @@ interface CustomerRepositoryInterface
 
     public function findByIdOrFail(int|string $id): Customer;
 
+    public function findByIdWithSummaryOrFail(int|string $id): Customer;
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -46,6 +48,13 @@ interface CustomerRepositoryInterface
      * @param  array<string, mixed>  $data
      */
     public function updatePersonalInfo(int $customerId, array $data): Customer;
+
+    public function updateActivation(int $customerId, bool $isActive): Customer;
+
+    /**
+     * @param  array<int, string>|null  $tierOverrides
+     */
+    public function updateTierSettings(int $customerId, string $tierMode, ?array $tierOverrides = null): Customer;
 
     /**
      * @param  array<string, mixed>  $filters

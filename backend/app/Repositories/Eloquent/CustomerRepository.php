@@ -10,6 +10,7 @@ use App\Enums\CustomerTransactionType;
 use App\Models\Customer;
 use App\Models\CustomerAuditLog;
 use App\Models\CustomerTransaction;
+use App\Models\Vehicle;
 use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerRepository extends BaseRepository implements CustomerRepositoryInterface
 {
+    private const VIP_SPEND_THRESHOLD = 50000;
+
+    private const FLEET_VEHICLE_THRESHOLD = 2;
+
     public function __construct(Customer $model)
     {
         parent::__construct($model);
@@ -37,21 +42,54 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
         return $this->model->findOrFail($id);
     }
 
+    public function findByIdWithSummaryOrFail(int|string $id): Customer
+    {
+        return $this->summaryQuery()->whereKey($id)->firstOrFail();
+    }
+
     public function all(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = $this->model->newQuery();
+        $query = $this->summaryQuery();
 
         if (isset($filters['account_status'])) {
             $query->where('account_status', $filters['account_status']);
         }
 
+        if (isset($filters['segment'])) {
+            $segment = strtolower((string) $filters['segment']);
+
+            if ($segment === 'active') {
+                $query->where('account_status', AccountStatus::Approved->value)
+                    ->where('is_active', true);
+            }
+
+            if ($segment === 'inactive') {
+                $query->where(function (Builder $inactiveQuery): void {
+                    $inactiveQuery->where('is_active', false)
+                        ->orWhere('account_status', '!=', AccountStatus::Approved->value);
+                });
+            }
+
+            if ($segment === 'pending') {
+                $query->where('account_status', AccountStatus::Pending->value);
+            }
+        }
+
+        if (isset($filters['tier'])) {
+            $this->applyTierFilter($query, strtolower((string) $filters['tier']));
+        }
+
         if (isset($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
+            $search = (string) $filters['search'];
+            $query->where(function (Builder $q) use ($search): void {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone_number', 'like', "%{$search}%");
+
+                if (preg_match('/^CUS-(\d+)$/i', $search, $matches) === 1) {
+                    $q->orWhere('id', (int) ltrim($matches[1], '0'));
+                }
             });
         }
 
@@ -111,6 +149,27 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
     {
         $customer = $this->model->findOrFail($customerId);
         $customer->update($data);
+
+        return $customer->fresh();
+    }
+
+    public function updateActivation(int $customerId, bool $isActive): Customer
+    {
+        $customer = $this->model->findOrFail($customerId);
+        $customer->update([
+            'is_active' => $isActive,
+        ]);
+
+        return $customer->fresh();
+    }
+
+    public function updateTierSettings(int $customerId, string $tierMode, ?array $tierOverrides = null): Customer
+    {
+        $customer = $this->model->findOrFail($customerId);
+        $customer->update([
+            'tier_mode' => $tierMode,
+            'tier_overrides' => $tierMode === 'manual' ? ($tierOverrides ?? []) : null,
+        ]);
 
         return $customer->fresh();
     }
@@ -364,6 +423,107 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
             ->where('account_status', AccountStatus::Pending)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    private function summaryQuery(): Builder
+    {
+        return $this->model->newQuery()
+            ->withCount('vehicles')
+            ->addSelect([
+                'total_jobs' => DB::table('job_orders')
+                    ->selectRaw('COUNT(*)')
+                    ->whereColumn('job_orders.customer_id', 'customers.id'),
+                'last_visit_at' => DB::table('job_orders')
+                    ->selectRaw('MAX(arrival_date)')
+                    ->whereColumn('job_orders.customer_id', 'customers.id'),
+                'total_spent' => CustomerTransaction::query()
+                    ->selectRaw('COALESCE(SUM(ABS(amount)), 0)')
+                    ->whereColumn('customer_transactions.customer_id', 'customers.id')
+                    ->where(function (Builder $query): void {
+                        $query->where(function (Builder $invoiceQuery): void {
+                            $invoiceQuery
+                                ->whereIn('customer_transactions.type', [
+                                    CustomerTransactionType::Invoice->value,
+                                    CustomerTransactionType::ReservationFee->value,
+                                ])
+                                ->where('customer_transactions.xendit_status', 'PAID');
+                        })->orWhere(function (Builder $paymentQuery): void {
+                            $paymentQuery
+                                ->where('customer_transactions.type', CustomerTransactionType::Payment->value)
+                                ->where(function (Builder $statusQuery): void {
+                                    $statusQuery
+                                        ->whereNull('customer_transactions.xendit_status')
+                                        ->orWhere('customer_transactions.xendit_status', 'PAID')
+                                        ->orWhereNotNull('customer_transactions.paid_at');
+                                });
+                        });
+                    }),
+                'primary_vehicle_make' => Vehicle::query()
+                    ->select('make')
+                    ->whereColumn('vehicles.customer_id', 'customers.id')
+                    ->orderBy('created_at')
+                    ->limit(1),
+                'primary_vehicle_model' => Vehicle::query()
+                    ->select('model')
+                    ->whereColumn('vehicles.customer_id', 'customers.id')
+                    ->orderBy('created_at')
+                    ->limit(1),
+                'primary_vehicle_plate' => Vehicle::query()
+                    ->select('plate_number')
+                    ->whereColumn('vehicles.customer_id', 'customers.id')
+                    ->orderBy('created_at')
+                    ->limit(1),
+            ]);
+    }
+
+    private function applyTierFilter(Builder $query, string $tier): void
+    {
+        if (! in_array($tier, ['vip', 'fleet'], true)) {
+            return;
+        }
+
+        if ($tier === 'vip') {
+            $query->where(function (Builder $tierQuery): void {
+                $tierQuery
+                    ->where(function (Builder $manualQuery): void {
+                        $manualQuery
+                            ->where('tier_mode', 'manual')
+                            ->whereJsonContains('tier_overrides', 'VIP');
+                    })
+                    ->orWhere(function (Builder $autoQuery): void {
+                        $autoQuery
+                            ->where('tier_mode', 'auto')
+                            ->whereRaw($this->paidSpendFilterSql().' >= ?', [self::VIP_SPEND_THRESHOLD]);
+                    });
+            });
+
+            return;
+        }
+
+        $query->where(function (Builder $tierQuery): void {
+            $tierQuery
+                ->where(function (Builder $manualQuery): void {
+                    $manualQuery
+                        ->where('tier_mode', 'manual')
+                        ->whereJsonContains('tier_overrides', 'Fleet');
+                })
+                ->orWhere(function (Builder $autoQuery): void {
+                    $autoQuery
+                        ->where('tier_mode', 'auto')
+                        ->whereRaw('(SELECT COUNT(*) FROM vehicles WHERE vehicles.customer_id = customers.id) >= ?', [self::FLEET_VEHICLE_THRESHOLD]);
+                });
+        });
+    }
+
+    private function paidSpendFilterSql(): string
+    {
+        return "(SELECT COALESCE(SUM(ABS(ct.amount)), 0)
+            FROM customer_transactions ct
+            WHERE ct.customer_id = customers.id
+            AND (
+                (ct.type IN ('invoice', 'reservation_fee') AND ct.xendit_status = 'PAID')
+                OR (ct.type = 'payment' AND (ct.xendit_status IS NULL OR ct.xendit_status = 'PAID' OR ct.paid_at IS NOT NULL))
+            ))";
     }
 
     private function billingReceiptBaseQuery(int $customerId): Builder

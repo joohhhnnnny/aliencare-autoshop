@@ -13,6 +13,7 @@ use App\Enums\UserRole;
 use App\Exceptions\JobOrderNotFoundException;
 use App\Exceptions\JobOrderStateException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Customer\CustomerIndexRequest;
 use App\Http\Requests\Api\Customer\CompleteOnboardingRequest;
 use App\Http\Requests\Api\Customer\GetCustomerBillingReceiptsRequest;
 use App\Http\Requests\Api\Customer\GetCustomerTransactionsRequest;
@@ -22,7 +23,9 @@ use App\Http\Requests\Api\Customer\RejectCustomerRequest;
 use App\Http\Requests\Api\Customer\RescheduleCustomerJobOrderRequest;
 use App\Http\Requests\Api\Customer\StoreCustomerRequest;
 use App\Http\Requests\Api\Customer\UpdateCustomerRequest;
+use App\Http\Requests\Api\Customer\UpdateCustomerActivationRequest;
 use App\Http\Requests\Api\Customer\UpdateCustomerTransactionRequest;
+use App\Http\Requests\Api\Customer\UpdateCustomerTiersRequest;
 use App\Http\Requests\Api\Customer\UpdatePersonalInfoRequest;
 use App\Http\Requests\Api\Customer\UpdateSpecialInfoRequest;
 use App\Http\Resources\CustomerAuditLogResource;
@@ -43,6 +46,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -73,12 +77,16 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(CustomerIndexRequest $request): JsonResponse
     {
+        $this->authorizeManageCustomers();
+
         $filters = array_filter([
             'account_status' => $request->input('account_status'),
+            'segment' => $request->input('segment'),
+            'tier' => $request->input('tier'),
             'search' => $request->input('search'),
-        ], fn ($value) => $value !== null);
+        ], fn ($value) => $value !== null && $value !== '');
 
         $customers = $this->customerRepository->all(
             $filters,
@@ -93,6 +101,8 @@ class CustomerController extends Controller
 
     public function store(StoreCustomerRequest $request): JsonResponse
     {
+        $this->authorizeManageCustomers();
+
         try {
             $customer = $this->customerService->register($request->validated());
 
@@ -111,12 +121,14 @@ class CustomerController extends Controller
 
     public function show(int $id): JsonResponse
     {
+        $this->authorizeManageCustomers();
+
         try {
-            $customer = $this->customerRepository->findByIdOrFail($id);
+            $customer = $this->customerRepository->findByIdWithSummaryOrFail($id);
 
             return response()->json([
                 'success' => true,
-                'data' => new CustomerResource($customer->load('vehicles')),
+                'data' => new CustomerResource($this->loadCustomerForFrontdesk($customer)),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -128,11 +140,9 @@ class CustomerController extends Controller
 
     public function update(UpdateCustomerRequest $request, int $id): JsonResponse
     {
-        try {
-            if ($response = $this->ensureCustomerOwnsId($request, $id)) {
-                return $response;
-            }
+        $this->authorizeManageCustomers();
 
+        try {
             $customer = $this->customerService->updatePersonalInfo(
                 $id,
                 $request->validated(),
@@ -149,6 +159,64 @@ class CustomerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update customer: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateActivation(UpdateCustomerActivationRequest $request, int $id): JsonResponse
+    {
+        $this->authorizeManageCustomers();
+
+        try {
+            $customer = $this->customerService->updateActivation(
+                $id,
+                (bool) $request->validated('is_active'),
+                $request->user()->id,
+                $request->ip(),
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => new CustomerResource($customer),
+                'message' => $customer->is_active
+                    ? 'Customer account activated.'
+                    : 'Customer account deactivated.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update activation status: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateTiers(UpdateCustomerTiersRequest $request, int $id): JsonResponse
+    {
+        $this->authorizeManageCustomers();
+
+        try {
+            $customer = $this->customerService->updateTierSettings(
+                $id,
+                $request->validated('tier_mode'),
+                $request->validated('tier_overrides'),
+                $request->user()->id,
+                $request->ip(),
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => new CustomerResource($customer),
+                'message' => 'Customer tier settings updated.',
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update customer tiers: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -930,6 +998,22 @@ class CustomerController extends Controller
         }
 
         return Customer::where('email', $user->email)->first();
+    }
+
+    private function authorizeManageCustomers(): void
+    {
+        Gate::authorize('manage-customers');
+    }
+
+    private function loadCustomerForFrontdesk(Customer $customer): Customer
+    {
+        return $customer->load([
+            'vehicles' => function ($query): void {
+                $query
+                    ->withMax('jobOrders as last_service_at', 'arrival_date')
+                    ->orderBy('created_at');
+            },
+        ]);
     }
 
     private function resolveOwnedJobOrder(Request $request, int $jobOrderId): JobOrder|JsonResponse
