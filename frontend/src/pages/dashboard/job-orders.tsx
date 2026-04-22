@@ -503,6 +503,10 @@ export default function JobOrders() {
                 response = await frontdeskJobOrderService.completeJobOrder(selectedOrder.id);
             }
 
+            if (!response) {
+                return;
+            }
+
             upsertJobOrder(response.data);
         } catch (error) {
             setActionError(error instanceof Error ? error.message : 'Failed to process status action.');
