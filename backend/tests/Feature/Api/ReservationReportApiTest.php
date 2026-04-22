@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Api;
 
 use App\Models\Inventory;
+use App\Models\JobOrder;
 use App\Models\Report;
 use App\Models\Reservation;
+use App\Models\StockTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -633,7 +635,51 @@ class ReservationReportApiTest extends TestCase
 
     public function test_get_dashboard_analytics(): void
     {
-        Inventory::factory()->count(5)->create();
+        $engineInventory = Inventory::factory()->create([
+            'stock' => 8,
+            'reorder_level' => 10,
+            'unit_price' => 100,
+            'category' => 'Engine',
+            'supplier' => 'Prime Supply',
+            'status' => 'active',
+        ]);
+
+        Inventory::factory()->create([
+            'stock' => 12,
+            'reorder_level' => 5,
+            'unit_price' => 50,
+            'category' => 'Engine',
+            'supplier' => 'Prime Supply',
+            'status' => 'active',
+        ]);
+
+        Reservation::factory()->pending()->create([
+            'item_id' => $engineInventory->item_id,
+        ]);
+
+        Reservation::factory()->approved()->create([
+            'item_id' => $engineInventory->item_id,
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'sale',
+            'quantity' => -2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'procurement',
+            'quantity' => 4,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        JobOrder::factory()->completed()->create();
+        JobOrder::factory()->inProgress()->create();
+        JobOrder::factory()->pendingApproval()->create();
 
         $response = $this->actingAs($this->user)
             ->getJson('/api/v1/reports/analytics/dashboard');
@@ -641,8 +687,28 @@ class ReservationReportApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'success',
-                'data',
+                'data' => [
+                    'inventory_value',
+                    'low_stock_count',
+                    'pending_reservations',
+                    'today_transactions',
+                    'weekly_sales',
+                    'monthly_procurement',
+                    'job_pipeline' => ['completed', 'in_progress', 'queued'],
+                    'total_items',
+                    'total_value',
+                    'active_reservations',
+                    'recent_transactions',
+                    'top_categories',
+                ],
             ]);
+
+        $response->assertJsonPath('data.inventory_value', 1400);
+        $response->assertJsonPath('data.low_stock_count', 1);
+        $response->assertJsonPath('data.pending_reservations', 1);
+        $response->assertJsonPath('data.job_pipeline.completed', 1);
+        $response->assertJsonPath('data.job_pipeline.in_progress', 1);
+        $response->assertJsonPath('data.job_pipeline.queued', 1);
     }
 
     public function test_get_dashboard_analytics_requires_authentication(): void
@@ -654,14 +720,78 @@ class ReservationReportApiTest extends TestCase
 
     public function test_get_usage_analytics(): void
     {
+        $engineInventory = Inventory::factory()->create([
+            'sku' => 'INV-000001',
+            'item_name' => 'Engine Oil',
+            'description' => 'Synthetic oil',
+            'category' => 'Engine',
+            'unit_price' => 100,
+            'status' => 'active',
+        ]);
+
+        $brakeInventory = Inventory::factory()->create([
+            'sku' => 'INV-000002',
+            'item_name' => 'Brake Pad',
+            'description' => 'Front brake pad set',
+            'category' => 'Brakes',
+            'unit_price' => 50,
+            'status' => 'active',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'sale',
+            'quantity' => -2,
+            'created_at' => '2024-01-10 09:00:00',
+            'updated_at' => '2024-01-10 09:00:00',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'reservation',
+            'quantity' => -1,
+            'created_at' => '2024-01-10 11:00:00',
+            'updated_at' => '2024-01-10 11:00:00',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $brakeInventory->item_id,
+            'transaction_type' => 'sale',
+            'quantity' => -3,
+            'created_at' => '2024-01-12 13:00:00',
+            'updated_at' => '2024-01-12 13:00:00',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'procurement',
+            'quantity' => 8,
+            'created_at' => '2024-01-15 08:30:00',
+            'updated_at' => '2024-01-15 08:30:00',
+        ]);
+
         $response = $this->actingAs($this->user)
             ->getJson('/api/v1/reports/analytics/usage?start_date=2024-01-01&end_date=2024-01-31');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'success',
-                'data',
+                'data' => [
+                    'date_range' => ['start_date', 'end_date'],
+                    'summary' => ['total_transactions', 'total_consumed', 'total_cost', 'unique_items_used', 'most_used_item', 'active_categories'],
+                    'usage_by_item',
+                    'category_breakdown',
+                    'top_consumed_items',
+                    'daily_summary',
+                ],
             ]);
+
+        $response->assertJsonPath('data.summary.total_transactions', 4);
+        $response->assertJsonPath('data.summary.total_consumed', 6);
+        $response->assertJsonPath('data.summary.total_cost', 450);
+        $response->assertJsonPath('data.summary.unique_items_used', 2);
+        $response->assertJsonPath('data.summary.most_used_item.item_name', 'Brake Pad');
+        $response->assertJsonPath('data.summary.most_used_item.consumed', 3);
     }
 
     public function test_get_usage_analytics_uses_default_date_range(): void
@@ -674,14 +804,76 @@ class ReservationReportApiTest extends TestCase
 
     public function test_get_procurement_analytics(): void
     {
+        $engineInventory = Inventory::factory()->create([
+            'category' => 'Engine',
+            'supplier' => 'Prime Supply',
+            'unit_price' => 75,
+            'status' => 'active',
+        ]);
+
+        $brakeInventory = Inventory::factory()->create([
+            'category' => 'Brakes',
+            'supplier' => 'Metro Parts',
+            'unit_price' => 120,
+            'status' => 'active',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $engineInventory->item_id,
+            'transaction_type' => 'procurement',
+            'quantity' => 4,
+            'created_at' => '2024-02-10 10:00:00',
+            'updated_at' => '2024-02-10 10:00:00',
+        ]);
+
+        StockTransaction::factory()->create([
+            'item_id' => $brakeInventory->item_id,
+            'transaction_type' => 'procurement',
+            'quantity' => 2,
+            'created_at' => '2024-03-05 14:30:00',
+            'updated_at' => '2024-03-05 14:30:00',
+        ]);
+
         $response = $this->actingAs($this->user)
             ->getJson('/api/v1/reports/analytics/procurement?start_date=2024-01-01&end_date=2024-06-30');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'success',
-                'data',
+                'data' => [
+                    'date_range' => ['start_date', 'end_date'],
+                    'total_procurements',
+                    'total_procured',
+                    'total_quantity',
+                    'total_value',
+                    'by_supplier',
+                    'by_category',
+                    'monthly_breakdown',
+                ],
             ]);
+
+        $response->assertJsonPath('data.total_procurements', 2);
+        $response->assertJsonPath('data.total_procured', 6);
+        $response->assertJsonPath('data.total_quantity', 6);
+        $response->assertJsonPath('data.total_value', 540);
+    }
+
+    public function test_get_usage_analytics_validates_date_range(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v1/reports/analytics/usage?start_date=2024-02-01&end_date=2024-01-01');
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['start_date']);
+    }
+
+    public function test_get_procurement_analytics_validates_date_format(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->getJson('/api/v1/reports/analytics/procurement?start_date=01-01-2024&end_date=2024-01-31');
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['start_date']);
     }
 
     public function test_get_procurement_analytics_uses_default_date_range(): void

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Contracts\Services\ReportServiceInterface;
 use App\Exceptions\ReportGenerationException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Report\GetAnalyticsDateRangeRequest;
 use App\Http\Requests\Api\Report\GenerateDailyReportRequest;
 use App\Http\Requests\Api\Report\GenerateMonthlyReportRequest;
 use App\Http\Requests\Api\Report\GenerateReconciliationReportRequest;
@@ -207,13 +208,14 @@ class ReportController extends Controller
     /**
      * Get usage analytics for a date range.
      */
-    public function getUsageAnalytics(Request $request): JsonResponse
+    public function getUsageAnalytics(GetAnalyticsDateRangeRequest $request): JsonResponse
     {
         Gate::authorize('view-reports');
 
         try {
-            $startDate = Carbon::parse($request->input('start_date', now()->subDays(30)->format('Y-m-d')));
-            $endDate = Carbon::parse($request->input('end_date', now()->format('Y-m-d')));
+            $validated = $request->validated();
+            $startDate = Carbon::parse($validated['start_date'] ?? now()->subDays(30)->format('Y-m-d'));
+            $endDate = Carbon::parse($validated['end_date'] ?? now()->format('Y-m-d'));
 
             $analytics = $this->reportService->getUsageAnalytics($startDate, $endDate);
 
@@ -232,13 +234,14 @@ class ReportController extends Controller
     /**
      * Get procurement analytics for a date range.
      */
-    public function getProcurementAnalytics(Request $request): JsonResponse
+    public function getProcurementAnalytics(GetAnalyticsDateRangeRequest $request): JsonResponse
     {
         Gate::authorize('view-reports');
 
         try {
-            $startDate = Carbon::parse($request->input('start_date', now()->subMonths(6)->format('Y-m-d')));
-            $endDate = Carbon::parse($request->input('end_date', now()->format('Y-m-d')));
+            $validated = $request->validated();
+            $startDate = Carbon::parse($validated['start_date'] ?? now()->subMonths(6)->format('Y-m-d'));
+            $endDate = Carbon::parse($validated['end_date'] ?? now()->format('Y-m-d'));
 
             $analytics = $this->reportService->getProcurementAnalytics($startDate, $endDate);
 

@@ -28,6 +28,151 @@ export interface ReconciliationRequest {
     end_date: string;
 }
 
+export interface ReportsDashboardAnalytics {
+    inventory_value: number;
+    low_stock_count: number;
+    pending_reservations: number;
+    today_transactions: number;
+    weekly_sales: number;
+    monthly_procurement: number;
+    job_pipeline: {
+        completed: number;
+        in_progress: number;
+        queued: number;
+    };
+    total_items?: number;
+    total_value?: number;
+    active_reservations?: number;
+    recent_transactions?: Array<{
+        id: number;
+        item_id: number;
+        transaction_type: string;
+        quantity: number;
+        created_at: string;
+        inventory_item?: {
+            item_id: number | null;
+            item_name: string | null;
+        };
+    }>;
+    top_categories?: Array<{
+        category: string;
+        count: number;
+        value: number;
+    }>;
+    monthly_trends?: Array<{
+        month: string;
+        procurement_value: number;
+        usage_value: number;
+    }>;
+}
+
+export interface UsageAnalyticsResponse {
+    date_range: {
+        start_date: string;
+        end_date: string;
+    };
+    summary: {
+        total_transactions: number;
+        total_consumed: number;
+        total_cost: number;
+        unique_items_used: number;
+        most_used_item: {
+            part_number: string;
+            item_name: string;
+            consumed: number;
+        } | null;
+        active_categories: number;
+    };
+    usage_by_item: Array<{
+        item_id: number;
+        item_name: string;
+        part_number: string;
+        description: string;
+        category: string;
+        consumed: number;
+        cost: number;
+        unit_price: number;
+        transaction_count: number;
+    }>;
+    category_breakdown: Array<{
+        category: string;
+        consumed: number;
+        cost: number;
+        item_count: number;
+    }>;
+    top_consumed_items: Array<{
+        item_id: number;
+        item_name: string;
+        part_number: string;
+        description: string;
+        category: string;
+        consumed: number;
+        cost: number;
+        unit_price: number;
+        transaction_count: number;
+    }>;
+    daily_summary: Array<{
+        date: string;
+        count: number;
+    }>;
+
+    // Compatibility fields for legacy consumers.
+    period?: {
+        start_date: string;
+        end_date: string;
+        days: number;
+    };
+    total_transactions?: number;
+    by_type?: Record<string, { count: number; quantity: number }>;
+    top_items?: Array<{
+        item_id: number;
+        item_name: string;
+        part_number: string;
+        description: string;
+        category: string;
+        consumed: number;
+        cost: number;
+        unit_price: number;
+        transaction_count: number;
+    }>;
+}
+
+export interface ProcurementAnalyticsResponse {
+    date_range: {
+        start_date: string;
+        end_date: string;
+    };
+    total_procurements: number;
+    total_procured: number;
+    total_quantity: number;
+    total_value: number;
+    by_supplier: Array<{
+        supplier: string;
+        count: number;
+        quantity: number;
+        value: number;
+        items_count: number;
+    }>;
+    by_category: Array<{
+        category: string;
+        count: number;
+        quantity: number;
+        value: number;
+        item_count: number;
+    }>;
+    monthly_breakdown: Array<{
+        month: string;
+        quantity: number;
+        value: number;
+    }>;
+
+    // Compatibility fields for legacy consumers.
+    period?: {
+        start_date: string;
+        end_date: string;
+    };
+}
+
 class ReportsService {
     // Get all reports with pagination and filters
     async getReports(filters: ReportFilters = {}): Promise<ApiResponse<PaginatedResponse<Report>>> {
@@ -63,202 +208,21 @@ class ReportsService {
     }
 
     // Get dashboard analytics
-    async getDashboardAnalytics(): Promise<
-        ApiResponse<{
-            total_items: number;
-            total_value: number;
-            low_stock_count: number;
-            recent_activity: Array<{
-                id: number;
-                type: string;
-                description: string;
-                created_at: string;
-            }>;
-            top_categories: Array<{
-                category: string;
-                count: number;
-                value: number;
-            }>;
-            monthly_trends: Array<{
-                month: string;
-                procurement_value: number;
-                usage_value: number;
-            }>;
-        }>
-    > {
-        return api.get<
-            ApiResponse<{
-                total_items: number;
-                total_value: number;
-                low_stock_count: number;
-                recent_activity: Array<{
-                    id: number;
-                    type: string;
-                    description: string;
-                    created_at: string;
-                }>;
-                top_categories: Array<{
-                    category: string;
-                    count: number;
-                    value: number;
-                }>;
-                monthly_trends: Array<{
-                    month: string;
-                    procurement_value: number;
-                    usage_value: number;
-                }>;
-            }>
-        >('/v1/reports/analytics/dashboard');
+    async getDashboardAnalytics(): Promise<ApiResponse<ReportsDashboardAnalytics>> {
+        return api.get<ApiResponse<ReportsDashboardAnalytics>>('/v1/reports/analytics/dashboard');
     }
 
     // Get usage analytics for specific period
-    async getUsageAnalytics(
-        startDate: string,
-        endDate: string,
-    ): Promise<
-        ApiResponse<{
-            date_range: {
-                start_date: string;
-                end_date: string;
-            };
-            summary: {
-                total_consumed: number;
-                total_cost: number;
-                unique_items_used: number;
-                most_used_item: {
-                    part_number: string;
-                    item_name: string;
-                    consumed: number;
-                } | null;
-                active_categories: number;
-            };
-            usage_by_item: Array<{
-                item_id: number;
-                item_name: string;
-                part_number: string;
-                description: string;
-                category: string;
-                consumed: number;
-                cost: number;
-                unit_price: number;
-                transaction_count: number;
-            }>;
-            category_breakdown: Array<{
-                category: string;
-                consumed: number;
-                cost: number;
-                item_count: number;
-            }>;
-            top_consumed_items: Array<{
-                item_id: number;
-                item_name: string;
-                part_number: string;
-                description: string;
-                category: string;
-                consumed: number;
-                cost: number;
-                unit_price: number;
-                transaction_count: number;
-            }>;
-        }>
-    > {
-        return api.get<
-            ApiResponse<{
-                date_range: {
-                    start_date: string;
-                    end_date: string;
-                };
-                summary: {
-                    total_consumed: number;
-                    total_cost: number;
-                    unique_items_used: number;
-                    most_used_item: {
-                        part_number: string;
-                        item_name: string;
-                        consumed: number;
-                    } | null;
-                    active_categories: number;
-                };
-                usage_by_item: Array<{
-                    item_id: number;
-                    item_name: string;
-                    part_number: string;
-                    description: string;
-                    category: string;
-                    consumed: number;
-                    cost: number;
-                    unit_price: number;
-                    transaction_count: number;
-                }>;
-                category_breakdown: Array<{
-                    category: string;
-                    consumed: number;
-                    cost: number;
-                    item_count: number;
-                }>;
-                top_consumed_items: Array<{
-                    item_id: number;
-                    item_name: string;
-                    part_number: string;
-                    description: string;
-                    category: string;
-                    consumed: number;
-                    cost: number;
-                    unit_price: number;
-                    transaction_count: number;
-                }>;
-            }>
-        >('/v1/reports/analytics/usage', { start_date: startDate, end_date: endDate });
+    async getUsageAnalytics(startDate: string, endDate: string): Promise<ApiResponse<UsageAnalyticsResponse>> {
+        return api.get<ApiResponse<UsageAnalyticsResponse>>('/v1/reports/analytics/usage', { start_date: startDate, end_date: endDate });
     }
 
     // Get procurement analytics for specific period
-    async getProcurementAnalytics(
-        startDate: string,
-        endDate: string,
-    ): Promise<
-        ApiResponse<{
-            total_procured: number;
-            total_value: number;
-            by_supplier: Array<{
-                supplier: string;
-                quantity: number;
-                value: number;
-                items_count: number;
-            }>;
-            by_category: Array<{
-                category: string;
-                quantity: number;
-                value: number;
-            }>;
-            monthly_breakdown: Array<{
-                month: string;
-                quantity: number;
-                value: number;
-            }>;
-        }>
-    > {
-        return api.get<
-            ApiResponse<{
-                total_procured: number;
-                total_value: number;
-                by_supplier: Array<{
-                    supplier: string;
-                    quantity: number;
-                    value: number;
-                    items_count: number;
-                }>;
-                by_category: Array<{
-                    category: string;
-                    quantity: number;
-                    value: number;
-                }>;
-                monthly_breakdown: Array<{
-                    month: string;
-                    quantity: number;
-                    value: number;
-                }>;
-            }>
-        >('/v1/reports/analytics/procurement', { start_date: startDate, end_date: endDate });
+    async getProcurementAnalytics(startDate: string, endDate: string): Promise<ApiResponse<ProcurementAnalyticsResponse>> {
+        return api.get<ApiResponse<ProcurementAnalyticsResponse>>('/v1/reports/analytics/procurement', {
+            start_date: startDate,
+            end_date: endDate,
+        });
     }
 
     // Export report to PDF/Excel (if implemented in backend)

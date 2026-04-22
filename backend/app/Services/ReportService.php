@@ -9,7 +9,10 @@ use App\Contracts\Repositories\ReportRepositoryInterface;
 use App\Contracts\Repositories\ReservationRepositoryInterface;
 use App\Contracts\Repositories\StockTransactionRepositoryInterface;
 use App\Contracts\Services\ReportServiceInterface;
+use App\Enums\JobOrderStatus;
+use App\Models\JobOrder;
 use App\Models\Report;
+use App\Models\StockTransaction;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -198,33 +201,93 @@ class ReportService implements ReportServiceInterface
     public function getDashboardAnalytics(): array
     {
         $today = Carbon::today();
-        $weekAgo = $today->copy()->subWeek();
-        $monthAgo = $today->copy()->subMonth();
+        $todayStart = $today->copy()->startOfDay();
+        $todayEnd = $today->copy()->endOfDay();
+        $weekAgo = $todayStart->copy()->subDays(6);
+        $monthAgo = $todayStart->copy()->subDays(29);
+
+        $inventoryValue = $this->inventoryRepository->getTotalInventoryValue();
+        $activeItemsCount = $this->inventoryRepository->getActiveItems()->count();
+        $lowStockCount = $this->inventoryRepository->getLowStockItems()->count();
+        $pendingReservations = $this->reservationRepository->getPendingCount();
+        $activeReservations = $this->reservationRepository->getActiveReservations()->count();
 
         $todayTransactions = $this->transactionRepository
-            ->getByDateRange($today->startOfDay(), $today->endOfDay());
+            ->getByDateRange($todayStart, $todayEnd);
 
         $weeklySales = $this->transactionRepository
-            ->getByDateRange($weekAgo, $today)
+            ->getByDateRange($weekAgo, $todayEnd)
             ->where('transaction_type', 'sale')
             ->sum(function ($t) {
                 return abs($t->quantity) * ($t->inventory->unit_price ?? 0);
             });
 
         $monthlyProcurement = $this->transactionRepository
-            ->getByDateRange($monthAgo, $today)
+            ->getByDateRange($monthAgo, $todayEnd)
             ->where('transaction_type', 'procurement')
             ->sum(function ($t) {
                 return $t->quantity * ($t->inventory->unit_price ?? 0);
             });
 
+        $recentTransactions = $this->transactionRepository
+            ->getByDateRange($weekAgo, $todayEnd)
+            ->take(10)
+            ->values()
+            ->map(fn ($transaction) => [
+                'id' => $transaction->id,
+                'item_id' => $transaction->item_id,
+                'transaction_type' => (string) $transaction->transaction_type,
+                'quantity' => (int) $transaction->quantity,
+                'created_at' => $transaction->created_at?->toISOString(),
+                'inventory_item' => [
+                    'item_id' => $transaction->inventory->item_id ?? null,
+                    'item_name' => $transaction->inventory->item_name ?? null,
+                ],
+            ]);
+
+        $topCategories = $this->inventoryRepository
+            ->getCategoryBreakdown()
+            ->sortByDesc('total_value')
+            ->take(6)
+            ->values()
+            ->map(fn ($category) => [
+                'category' => (string) ($category->category ?? 'General'),
+                'count' => (int) ($category->count ?? 0),
+                'value' => (float) ($category->total_value ?? 0),
+            ]);
+
+        $statusCounts = JobOrder::query()
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $completedJobs = (int) ($statusCounts[JobOrderStatus::Completed->value] ?? 0)
+            + (int) ($statusCounts[JobOrderStatus::Settled->value] ?? 0);
+        $inProgressJobs = (int) ($statusCounts[JobOrderStatus::InProgress->value] ?? 0);
+        $queuedJobs = (int) ($statusCounts[JobOrderStatus::Created->value] ?? 0)
+            + (int) ($statusCounts[JobOrderStatus::PendingApproval->value] ?? 0)
+            + (int) ($statusCounts[JobOrderStatus::Approved->value] ?? 0);
+
         return [
-            'inventory_value' => $this->inventoryRepository->getTotalInventoryValue(),
-            'low_stock_count' => $this->inventoryRepository->getLowStockItems()->count(),
-            'pending_reservations' => $this->reservationRepository->getPendingCount(),
+            'inventory_value' => $inventoryValue,
+            'low_stock_count' => $lowStockCount,
+            'pending_reservations' => $pendingReservations,
             'today_transactions' => $todayTransactions->count(),
-            'weekly_sales' => $weeklySales,
-            'monthly_procurement' => $monthlyProcurement,
+            'weekly_sales' => (float) $weeklySales,
+            'monthly_procurement' => (float) $monthlyProcurement,
+            'job_pipeline' => [
+                'completed' => $completedJobs,
+                'in_progress' => $inProgressJobs,
+                'queued' => $queuedJobs,
+            ],
+
+            // Compatibility keys used by inventory dashboard widgets.
+            'total_items' => $activeItemsCount,
+            'total_value' => $inventoryValue,
+            'active_reservations' => $activeReservations,
+            'recent_transactions' => $recentTransactions,
+            'top_categories' => $topCategories,
+            'monthly_trends' => [],
         ];
     }
 
@@ -233,31 +296,107 @@ class ReportService implements ReportServiceInterface
      */
     public function getUsageAnalytics(Carbon $startDate, Carbon $endDate): array
     {
-        $transactions = $this->transactionRepository->getByDateRange($startDate, $endDate);
+        $rangeStart = $startDate->copy()->startOfDay();
+        $rangeEnd = $endDate->copy()->endOfDay();
+        $transactions = $this->transactionRepository->getByDateRange($rangeStart, $rangeEnd);
+
+        $usageTransactions = $transactions->filter(function (StockTransaction $transaction): bool {
+            return $transaction->transaction_type !== 'procurement' && (int) $transaction->quantity < 0;
+        });
+
+        $usageByItem = $usageTransactions
+            ->groupBy('item_id')
+            ->map(function ($group, $itemId) {
+                /** @var StockTransaction|null $first */
+                $first = $group->first();
+                $inventory = $first?->inventory;
+                $unitPrice = (float) ($inventory->unit_price ?? 0);
+                $consumed = (int) $group->sum(fn (StockTransaction $transaction) => abs((int) $transaction->quantity));
+                $resolvedItemId = (int) ($inventory->item_id ?? $itemId ?? 0);
+                $partNumber = trim((string) ($inventory->sku ?? ''));
+
+                return [
+                    'item_id' => $resolvedItemId,
+                    'item_name' => (string) ($inventory->item_name ?? 'Unknown Item'),
+                    'part_number' => $partNumber !== '' ? $partNumber : sprintf('ITEM-%d', max(1, $resolvedItemId)),
+                    'description' => (string) ($inventory->description ?? ''),
+                    'category' => (string) ($inventory->category ?? 'General'),
+                    'consumed' => $consumed,
+                    'cost' => round($consumed * $unitPrice, 2),
+                    'unit_price' => $unitPrice,
+                    'transaction_count' => (int) $group->count(),
+                ];
+            })
+            ->sortByDesc('consumed')
+            ->values();
+
+        $categoryBreakdown = $usageByItem
+            ->groupBy('category')
+            ->map(function ($group, $category) {
+                return [
+                    'category' => (string) $category,
+                    'consumed' => (int) $group->sum('consumed'),
+                    'cost' => round((float) $group->sum('cost'), 2),
+                    'item_count' => (int) $group->count(),
+                ];
+            })
+            ->sortByDesc('consumed')
+            ->values();
+
+        $topConsumedItems = $usageByItem->take(10)->values();
+        $mostUsedItem = $topConsumedItems->first();
+
+        $byType = $usageTransactions
+            ->groupBy('transaction_type')
+            ->map(fn ($group) => [
+                'count' => (int) $group->count(),
+                'quantity' => (int) $group->sum(fn (StockTransaction $transaction) => abs((int) $transaction->quantity)),
+            ]);
+
+        $dailySummary = $usageTransactions
+            ->groupBy(fn (StockTransaction $transaction) => $transaction->created_at->toDateString())
+            ->map(fn ($group, $date) => [
+                'date' => (string) $date,
+                'count' => (int) $group->count(),
+            ])
+            ->sortBy('date')
+            ->values();
+
+        $totalTransactions = (int) $transactions->count();
+        $totalConsumed = (int) $usageByItem->sum('consumed');
+        $totalCost = round((float) $usageByItem->sum('cost'), 2);
 
         return [
-            'period' => [
-                'start_date' => $startDate->toDateString(),
-                'end_date' => $endDate->toDateString(),
-                'days' => $startDate->diffInDays($endDate) + 1,
+            'date_range' => [
+                'start_date' => $rangeStart->toDateString(),
+                'end_date' => $rangeEnd->toDateString(),
             ],
-            'total_transactions' => $transactions->count(),
-            'by_type' => $transactions->groupBy('transaction_type')
-                ->map(fn ($group) => [
-                    'count' => $group->count(),
-                    'quantity' => $group->sum(fn ($t) => abs($t->quantity)),
-                ]),
-            'top_items' => $transactions->groupBy('item_id')
-                ->map(fn ($group) => [
-                    'item_id' => $group->first()->item_id,
-                    'item_name' => $group->first()->inventory->item_name ?? 'Unknown',
-                    'transaction_count' => $group->count(),
-                ])
-                ->sortByDesc('transaction_count')
-                ->take(10)
-                ->values(),
-            'daily_summary' => $transactions->groupBy(fn ($t) => $t->created_at->toDateString())
-                ->map(fn ($group) => $group->count()),
+            'summary' => [
+                'total_transactions' => $totalTransactions,
+                'total_consumed' => $totalConsumed,
+                'total_cost' => $totalCost,
+                'unique_items_used' => $usageByItem->count(),
+                'most_used_item' => $mostUsedItem ? [
+                    'part_number' => $mostUsedItem['part_number'],
+                    'item_name' => $mostUsedItem['item_name'],
+                    'consumed' => $mostUsedItem['consumed'],
+                ] : null,
+                'active_categories' => $categoryBreakdown->count(),
+            ],
+            'usage_by_item' => $usageByItem,
+            'category_breakdown' => $categoryBreakdown,
+            'top_consumed_items' => $topConsumedItems,
+            'daily_summary' => $dailySummary,
+
+            // Compatibility keys for legacy consumers.
+            'period' => [
+                'start_date' => $rangeStart->toDateString(),
+                'end_date' => $rangeEnd->toDateString(),
+                'days' => $rangeStart->diffInDays($rangeEnd) + 1,
+            ],
+            'total_transactions' => $totalTransactions,
+            'by_type' => $byType,
+            'top_items' => $topConsumedItems,
         ];
     }
 
@@ -266,30 +405,83 @@ class ReportService implements ReportServiceInterface
      */
     public function getProcurementAnalytics(Carbon $startDate, Carbon $endDate): array
     {
-        $transactions = $this->transactionRepository->getByDateRange($startDate, $endDate)
+        $rangeStart = $startDate->copy()->startOfDay();
+        $rangeEnd = $endDate->copy()->endOfDay();
+        $transactions = $this->transactionRepository->getByDateRange($rangeStart, $rangeEnd)
             ->where('transaction_type', 'procurement');
 
+        $bySupplier = $transactions
+            ->groupBy(fn (StockTransaction $transaction) => $transaction->inventory->supplier ?? 'Unknown')
+            ->map(function ($group, $supplier) {
+                $quantity = (int) $group->sum('quantity');
+                $value = round((float) $group->sum(fn (StockTransaction $transaction) => (int) $transaction->quantity * (float) ($transaction->inventory->unit_price ?? 0)), 2);
+
+                return [
+                    'supplier' => (string) $supplier,
+                    'count' => (int) $group->count(),
+                    'quantity' => $quantity,
+                    'value' => $value,
+                    'items_count' => (int) $group->pluck('item_id')->unique()->count(),
+                ];
+            })
+            ->sortByDesc('value')
+            ->values();
+
+        $byCategory = $transactions
+            ->groupBy(fn (StockTransaction $transaction) => $transaction->inventory->category ?? 'Unknown')
+            ->map(function ($group, $category) {
+                $quantity = (int) $group->sum('quantity');
+                $value = round((float) $group->sum(fn (StockTransaction $transaction) => (int) $transaction->quantity * (float) ($transaction->inventory->unit_price ?? 0)), 2);
+
+                return [
+                    'category' => (string) $category,
+                    'count' => (int) $group->count(),
+                    'quantity' => $quantity,
+                    'value' => $value,
+                    'item_count' => (int) $group->pluck('item_id')->unique()->count(),
+                ];
+            })
+            ->sortByDesc('value')
+            ->values();
+
+        $monthlyBreakdown = $transactions
+            ->groupBy(fn (StockTransaction $transaction) => $transaction->created_at->format('Y-m'))
+            ->map(function ($group, $monthKey) {
+                $monthDate = Carbon::createFromFormat('Y-m', (string) $monthKey);
+                $quantity = (int) $group->sum('quantity');
+                $value = round((float) $group->sum(fn (StockTransaction $transaction) => (int) $transaction->quantity * (float) ($transaction->inventory->unit_price ?? 0)), 2);
+
+                return [
+                    'month' => $monthDate->format('M Y'),
+                    'quantity' => $quantity,
+                    'value' => $value,
+                ];
+            })
+            ->sortBy(fn ($row) => Carbon::createFromFormat('M Y', (string) $row['month'])->timestamp)
+            ->values();
+
+        $totalProcurements = (int) $transactions->count();
+        $totalQuantity = (int) $transactions->sum('quantity');
+        $totalValue = round((float) $transactions->sum(fn ($t) => (int) $t->quantity * (float) ($t->inventory->unit_price ?? 0)), 2);
+
         return [
-            'period' => [
-                'start_date' => $startDate->toDateString(),
-                'end_date' => $endDate->toDateString(),
+            'date_range' => [
+                'start_date' => $rangeStart->toDateString(),
+                'end_date' => $rangeEnd->toDateString(),
             ],
-            'total_procurements' => $transactions->count(),
-            'total_quantity' => $transactions->sum('quantity'),
-            'total_value' => $transactions->sum(function ($t) {
-                return $t->quantity * ($t->inventory->unit_price ?? 0);
-            }),
-            'by_supplier' => $transactions->groupBy(fn ($t) => $t->inventory->supplier ?? 'Unknown')
-                ->map(fn ($group) => [
-                    'count' => $group->count(),
-                    'quantity' => $group->sum('quantity'),
-                    'value' => $group->sum(fn ($t) => $t->quantity * ($t->inventory->unit_price ?? 0)),
-                ]),
-            'by_category' => $transactions->groupBy(fn ($t) => $t->inventory->category ?? 'Unknown')
-                ->map(fn ($group) => [
-                    'count' => $group->count(),
-                    'quantity' => $group->sum('quantity'),
-                ]),
+            'total_procurements' => $totalProcurements,
+            'total_procured' => $totalQuantity,
+            'total_quantity' => $totalQuantity,
+            'total_value' => $totalValue,
+            'by_supplier' => $bySupplier,
+            'by_category' => $byCategory,
+            'monthly_breakdown' => $monthlyBreakdown,
+
+            // Compatibility key used by legacy consumers.
+            'period' => [
+                'start_date' => $rangeStart->toDateString(),
+                'end_date' => $rangeEnd->toDateString(),
+            ],
         ];
     }
 }

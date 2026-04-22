@@ -15,6 +15,11 @@ interface DashboardAnalyticsView {
     todayTransactions: number;
     weeklySales: number;
     monthlyProcurement: number;
+    jobPipeline: {
+        completed: number;
+        inProgress: number;
+        queued: number;
+    };
 }
 
 interface UsageByTypeRow {
@@ -77,7 +82,7 @@ interface ServicePerformanceRow {
     service: string;
     completed: number;
     completionRate: number;
-    averageHours: number;
+    averageHours: number | null;
 }
 
 interface ForecastRow {
@@ -93,58 +98,34 @@ const rangeConfig: Record<RangeKey, { label: string; days: number }> = {
     '90d': { label: 'Last 90 days', days: 90 },
 };
 
-const fallbackState: DashboardState = {
+const emptyState: DashboardState = {
     dashboard: {
-        inventoryValue: 612500,
-        lowStockCount: 7,
-        pendingReservations: 6,
-        todayTransactions: 18,
-        weeklySales: 164000,
-        monthlyProcurement: 194500,
+        inventoryValue: 0,
+        lowStockCount: 0,
+        pendingReservations: 0,
+        todayTransactions: 0,
+        weeklySales: 0,
+        monthlyProcurement: 0,
+        jobPipeline: {
+            completed: 0,
+            inProgress: 0,
+            queued: 0,
+        },
     },
     usage: {
-        totalTransactions: 164,
-        totalConsumed: 519,
-        totalCost: 217200,
-        byType: [
-            { type: 'Completed Services', count: 98, quantity: 98 },
-            { type: 'In Progress', count: 24, quantity: 24 },
-            { type: 'Awaiting Parts', count: 18, quantity: 18 },
-            { type: 'Queued', count: 24, quantity: 24 },
-        ],
-        topItems: [
-            { id: 1, name: 'Change Oil + Filter', count: 34, category: 'maintenance', cost: 48900 },
-            { id: 2, name: 'Brake Service', count: 26, category: 'repair', cost: 43800 },
-            { id: 3, name: 'AC Service', count: 19, category: 'repair', cost: 40100 },
-            { id: 4, name: 'Wheel Alignment', count: 17, category: 'maintenance', cost: 27500 },
-            { id: 5, name: 'Premium Wash', count: 28, category: 'cleaning', cost: 16800 },
-        ],
-        dailySummary: [
-            { date: 'Mon', count: 18 },
-            { date: 'Tue', count: 22 },
-            { date: 'Wed', count: 21 },
-            { date: 'Thu', count: 25 },
-            { date: 'Fri', count: 27 },
-            { date: 'Sat', count: 31 },
-            { date: 'Sun', count: 20 },
-        ],
+        totalTransactions: 0,
+        totalConsumed: 0,
+        totalCost: 0,
+        byType: [],
+        topItems: [],
+        dailySummary: [],
     },
     procurement: {
-        totalProcurements: 41,
-        totalQuantity: 436,
-        totalValue: 194500,
-        bySupplier: [
-            { supplier: 'Prime Auto Supply', count: 13, quantity: 158, value: 72600 },
-            { supplier: 'Metro Parts Hub', count: 10, quantity: 111, value: 52900 },
-            { supplier: 'Southline Lubes', count: 9, quantity: 96, value: 40800 },
-            { supplier: 'Roadstar Imports', count: 9, quantity: 71, value: 28200 },
-        ],
-        byCategory: [
-            { category: 'Engine & Fluids', count: 14, quantity: 141, value: 68800 },
-            { category: 'Brake Components', count: 10, quantity: 96, value: 41700 },
-            { category: 'Electrical', count: 8, quantity: 74, value: 39700 },
-            { category: 'Detailing Supplies', count: 9, quantity: 125, value: 44300 },
-        ],
+        totalProcurements: 0,
+        totalQuantity: 0,
+        totalValue: 0,
+        bySupplier: [],
+        byCategory: [],
     },
 };
 
@@ -190,25 +171,37 @@ function formatTypeLabel(type: string): string {
 
 function normalizeDashboardPayload(raw: unknown): DashboardAnalyticsView {
     if (!isRecord(raw)) {
-        return fallbackState.dashboard;
+        return emptyState.dashboard;
     }
 
+    const rawPipeline = isRecord(raw.job_pipeline) ? raw.job_pipeline : null;
+
     return {
-        inventoryValue: toNumber(raw.inventory_value, toNumber(raw.total_value, fallbackState.dashboard.inventoryValue)),
-        lowStockCount: toNumber(raw.low_stock_count, fallbackState.dashboard.lowStockCount),
-        pendingReservations: toNumber(raw.pending_reservations, fallbackState.dashboard.pendingReservations),
-        todayTransactions: toNumber(raw.today_transactions, fallbackState.dashboard.todayTransactions),
-        weeklySales: toNumber(raw.weekly_sales, fallbackState.dashboard.weeklySales),
-        monthlyProcurement: toNumber(raw.monthly_procurement, fallbackState.dashboard.monthlyProcurement),
+        inventoryValue: toNumber(raw.inventory_value, toNumber(raw.total_value, 0)),
+        lowStockCount: toNumber(raw.low_stock_count),
+        pendingReservations: toNumber(raw.pending_reservations),
+        todayTransactions: toNumber(raw.today_transactions),
+        weeklySales: toNumber(raw.weekly_sales),
+        monthlyProcurement: toNumber(raw.monthly_procurement),
+        jobPipeline: {
+            completed: toNumber(rawPipeline?.completed),
+            inProgress: toNumber(rawPipeline?.in_progress),
+            queued: toNumber(rawPipeline?.queued),
+        },
     };
 }
 
 function normalizeUsagePayload(raw: unknown): UsageAnalyticsView {
     if (!isRecord(raw)) {
-        return fallbackState.usage;
+        return emptyState.usage;
     }
 
-    const topItemsRaw = Array.isArray(raw.top_consumed_items) ? raw.top_consumed_items : Array.isArray(raw.top_items) ? raw.top_items : [];
+    const usageByItemRaw = Array.isArray(raw.usage_by_item) ? raw.usage_by_item : [];
+    const topItemsRaw = Array.isArray(raw.top_consumed_items)
+        ? raw.top_consumed_items
+        : Array.isArray(raw.top_items)
+          ? raw.top_items
+          : usageByItemRaw;
 
     const topItems = topItemsRaw
         .map((entry, index) => {
@@ -277,20 +270,11 @@ function normalizeUsagePayload(raw: unknown): UsageAnalyticsView {
     }
 
     const summary = isRecord(raw.summary) ? raw.summary : null;
-    const totalTransactions = toNumber(
-        raw.total_transactions,
-        toNumber(
-            summary?.total_consumed,
-            topItems.reduce((sum, item) => sum + item.count, 0),
-        ),
-    );
-    const totalConsumed = toNumber(summary?.total_consumed, totalTransactions);
-    const totalCost = toNumber(
-        summary?.total_cost,
-        topItems.reduce((sum, item) => sum + item.cost, 0),
-    );
+    const totalTransactions = toNumber(summary?.total_transactions, toNumber(raw.total_transactions, topItems.reduce((sum, item) => sum + item.count, 0)));
+    const totalConsumed = toNumber(summary?.total_consumed, topItems.reduce((sum, item) => sum + item.count, 0));
+    const totalCost = toNumber(summary?.total_cost, topItems.reduce((sum, item) => sum + item.cost, 0));
 
-    const normalized: UsageAnalyticsView = {
+    return {
         totalTransactions,
         totalConsumed,
         totalCost,
@@ -298,13 +282,11 @@ function normalizeUsagePayload(raw: unknown): UsageAnalyticsView {
         topItems,
         dailySummary,
     };
-
-    return normalized.dailySummary.length > 0 || normalized.topItems.length > 0 ? normalized : fallbackState.usage;
 }
 
 function normalizeProcurementPayload(raw: unknown): ProcurementAnalyticsView {
     if (!isRecord(raw)) {
-        return fallbackState.procurement;
+        return emptyState.procurement;
     }
 
     const bySupplier: ProcurementSupplierRow[] = [];
@@ -365,15 +347,13 @@ function normalizeProcurementPayload(raw: unknown): ProcurementAnalyticsView {
         });
     }
 
-    const normalized: ProcurementAnalyticsView = {
-        totalProcurements: toNumber(raw.total_procurements, fallbackState.procurement.totalProcurements),
-        totalQuantity: toNumber(raw.total_quantity, fallbackState.procurement.totalQuantity),
-        totalValue: toNumber(raw.total_value, fallbackState.procurement.totalValue),
+    return {
+        totalProcurements: toNumber(raw.total_procurements),
+        totalQuantity: toNumber(raw.total_quantity, toNumber(raw.total_procured)),
+        totalValue: toNumber(raw.total_value),
         bySupplier,
         byCategory,
     };
-
-    return normalized.bySupplier.length > 0 || normalized.byCategory.length > 0 ? normalized : fallbackState.procurement;
 }
 
 function makeLinePath(values: number[], width: number, height: number, pad = 16): string {
@@ -416,7 +396,7 @@ function clampPercent(value: number): number {
 
 function buildForecast(base: number[]): number[] {
     if (base.length === 0) {
-        return [0, 0, 0, 0];
+        return [];
     }
 
     if (base.length === 1) {
@@ -433,7 +413,7 @@ function formatPercentage(value: number): string {
 
 export default function Reports() {
     const [rangeKey, setRangeKey] = useState<RangeKey>('30d');
-    const [data, setData] = useState<DashboardState>(fallbackState);
+    const [data, setData] = useState<DashboardState>(emptyState);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -456,18 +436,32 @@ export default function Reports() {
                 reportsService.getProcurementAnalytics(startIso, endIso),
             ]);
 
+            const failedEndpoints: string[] = [];
+
             const dashboardData =
                 dashboardResult.status === 'fulfilled' && dashboardResult.value.success
                     ? normalizeDashboardPayload(dashboardResult.value.data)
-                    : fallbackState.dashboard;
+                    : emptyState.dashboard;
 
             const usageData =
-                usageResult.status === 'fulfilled' && usageResult.value.success ? normalizeUsagePayload(usageResult.value.data) : fallbackState.usage;
+                usageResult.status === 'fulfilled' && usageResult.value.success ? normalizeUsagePayload(usageResult.value.data) : emptyState.usage;
 
             const procurementData =
                 procurementResult.status === 'fulfilled' && procurementResult.value.success
                     ? normalizeProcurementPayload(procurementResult.value.data)
-                    : fallbackState.procurement;
+                    : emptyState.procurement;
+
+            if (dashboardResult.status !== 'fulfilled' || (dashboardResult.status === 'fulfilled' && !dashboardResult.value.success)) {
+                failedEndpoints.push('dashboard');
+            }
+
+            if (usageResult.status !== 'fulfilled' || (usageResult.status === 'fulfilled' && !usageResult.value.success)) {
+                failedEndpoints.push('usage');
+            }
+
+            if (procurementResult.status !== 'fulfilled' || (procurementResult.status === 'fulfilled' && !procurementResult.value.success)) {
+                failedEndpoints.push('procurement');
+            }
 
             setData({
                 dashboard: dashboardData,
@@ -475,13 +469,13 @@ export default function Reports() {
                 procurement: procurementData,
             });
 
-            if (dashboardResult.status !== 'fulfilled' || usageResult.status !== 'fulfilled' || procurementResult.status !== 'fulfilled') {
-                setError('Some analytics endpoints are unavailable. Displaying fallback estimates where needed.');
+            if (failedEndpoints.length > 0) {
+                setError(`Unable to load ${failedEndpoints.join(', ')} analytics. Empty state is shown for unavailable sections.`);
             }
         } catch (caughtError) {
             const message = caughtError instanceof Error ? caughtError.message : 'Failed to load reports analytics.';
-            setError(`${message} Showing fallback metrics.`);
-            setData(fallbackState);
+            setError(`${message} No analytics data is available right now.`);
+            setData(emptyState);
         } finally {
             setLoading(false);
         }
@@ -493,34 +487,26 @@ export default function Reports() {
 
     const servicePerformance = useMemo<ServicePerformanceRow[]>(() => {
         if (data.usage.topItems.length === 0) {
-            return [{ service: 'General Service', completed: 0, completionRate: 0, averageHours: 0 }];
+            return [];
         }
 
-        const maxCompleted = Math.max(...data.usage.topItems.map((item) => item.count), 1);
+        const totalCompleted = Math.max(1, data.usage.topItems.reduce((sum, item) => sum + item.count, 0));
 
-        return data.usage.topItems.slice(0, 5).map((item, index) => {
-            const completionRate = clampPercent((item.count / maxCompleted) * 100 - index * 2.5 + 84);
-            const averageHours = Math.max(0.7, 3.6 - index * 0.35);
+        return data.usage.topItems.slice(0, 5).map((item) => {
+            const completionRate = clampPercent((item.count / totalCompleted) * 100);
 
             return {
                 service: item.name,
                 completed: item.count,
                 completionRate,
-                averageHours,
+                averageHours: null,
             };
         });
     }, [data.usage.topItems]);
 
     const chartSeries = useMemo(() => {
-        const labels =
-            data.usage.dailySummary.length > 0
-                ? data.usage.dailySummary.map((entry) => entry.date)
-                : fallbackState.usage.dailySummary.map((entry) => entry.date);
-
-        const jobSeriesRaw =
-            data.usage.dailySummary.length > 0
-                ? data.usage.dailySummary.map((entry) => entry.count)
-                : fallbackState.usage.dailySummary.map((entry) => entry.count);
+        const labels = data.usage.dailySummary.map((entry) => entry.date);
+        const jobSeriesRaw = data.usage.dailySummary.map((entry) => entry.count);
 
         const projectedRevenueSeries = jobSeriesRaw.map((jobs) => jobs * 1650);
         const projectedCostSeries = jobSeriesRaw.map((jobs, index) => {
@@ -556,9 +542,9 @@ export default function Reports() {
     const projectedMargin = totalProjectedRevenue - totalProjectedCost;
     const marginPercent = totalProjectedRevenue > 0 ? (projectedMargin / totalProjectedRevenue) * 100 : 0;
 
-    const completedJobs = Math.max(0, Math.round(data.usage.totalTransactions * 0.62));
-    const inProgressJobs = Math.max(0, Math.round(data.usage.totalTransactions * 0.23));
-    const queuedJobs = Math.max(0, data.dashboard.pendingReservations + data.dashboard.lowStockCount);
+    const completedJobs = Math.max(0, data.dashboard.jobPipeline.completed);
+    const inProgressJobs = Math.max(0, data.dashboard.jobPipeline.inProgress);
+    const queuedJobs = Math.max(0, data.dashboard.jobPipeline.queued);
     const jobMixTotal = Math.max(1, completedJobs + inProgressJobs + queuedJobs);
     const completionRatio = (completedJobs / jobMixTotal) * 100;
 
@@ -698,6 +684,9 @@ export default function Reports() {
                                         );
                                     })}
                                 </svg>
+                                {chartSeries.labels.length === 0 && (
+                                    <p className="mt-2 text-center text-xs text-muted-foreground">No usage trend data found for the selected range.</p>
+                                )}
                             </div>
 
                             <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -800,28 +789,34 @@ export default function Reports() {
                             </div>
 
                             <div className="space-y-3">
-                                {servicePerformance.map((row) => (
-                                    <div key={row.service} className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="truncate text-sm font-semibold">{row.service}</p>
-                                            <span className="text-xs text-muted-foreground">{row.completed} completions</span>
-                                        </div>
-
-                                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#1c1e23]">
-                                            <div
-                                                className="h-full rounded-full bg-linear-to-r from-[#d4af37] to-[#f3d886]"
-                                                style={{ width: `${row.completionRate}%` }}
-                                            />
-                                        </div>
-
-                                        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                                            <span>Completion Confidence: {formatPercentage(row.completionRate)}</span>
-                                            <span className="inline-flex items-center gap-1">
-                                                <Clock3 className="h-3.5 w-3.5" /> Avg {row.averageHours.toFixed(1)}h
-                                            </span>
-                                        </div>
+                                {servicePerformance.length === 0 ? (
+                                    <div className="rounded-lg border border-dashed border-[#2a2a2e] bg-[#0d0d10] p-4 text-sm text-muted-foreground">
+                                        No service performance data available for this range.
                                     </div>
-                                ))}
+                                ) : (
+                                    servicePerformance.map((row) => (
+                                        <div key={row.service} className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="truncate text-sm font-semibold">{row.service}</p>
+                                                <span className="text-xs text-muted-foreground">{row.completed} completions</span>
+                                            </div>
+
+                                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#1c1e23]">
+                                                <div
+                                                    className="h-full rounded-full bg-linear-to-r from-[#d4af37] to-[#f3d886]"
+                                                    style={{ width: `${row.completionRate}%` }}
+                                                />
+                                            </div>
+
+                                            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                                                <span>Completion Confidence: {formatPercentage(row.completionRate)}</span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Clock3 className="h-3.5 w-3.5" /> {row.averageHours !== null ? `Avg ${row.averageHours.toFixed(1)}h` : 'Avg N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </article>
 
@@ -845,14 +840,22 @@ export default function Reports() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {forecastRows.map((row) => (
-                                            <tr key={row.period} className="border-t border-[#2a2a2e]">
-                                                <td className="px-3 py-2 font-medium text-foreground">{row.period}</td>
-                                                <td className="px-3 py-2 text-muted-foreground">{row.projectedJobs}</td>
-                                                <td className="px-3 py-2 text-emerald-300">{peso.format(row.projectedRevenue)}</td>
-                                                <td className="px-3 py-2 text-amber-300">{peso.format(row.projectedPartsCost)}</td>
+                                        {forecastRows.length === 0 ? (
+                                            <tr className="border-t border-[#2a2a2e]">
+                                                <td colSpan={4} className="px-3 py-3 text-center text-muted-foreground">
+                                                    No forecast data available for this range.
+                                                </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            forecastRows.map((row) => (
+                                                <tr key={row.period} className="border-t border-[#2a2a2e]">
+                                                    <td className="px-3 py-2 font-medium text-foreground">{row.period}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">{row.projectedJobs}</td>
+                                                    <td className="px-3 py-2 text-emerald-300">{peso.format(row.projectedRevenue)}</td>
+                                                    <td className="px-3 py-2 text-amber-300">{peso.format(row.projectedPartsCost)}</td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
