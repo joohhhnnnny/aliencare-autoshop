@@ -497,8 +497,10 @@ export default function JobOrders() {
 
             if (action === 'submit') {
                 response = await frontdeskJobOrderService.submitJobOrder(selectedOrder.id);
-            } else {
+            } else if (action === 'approve') {
                 response = await frontdeskJobOrderService.approveJobOrder(selectedOrder.id);
+            } else if (action === 'complete') {
+                response = await frontdeskJobOrderService.completeJobOrder(selectedOrder.id);
             }
 
             upsertJobOrder(response.data);
