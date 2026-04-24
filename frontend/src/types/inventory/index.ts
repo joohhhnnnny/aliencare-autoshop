@@ -108,16 +108,41 @@ export interface Report {
 
 // Dashboard analytics interface
 export interface DashboardAnalytics {
-    total_items: number;
-    total_value: number;
+    inventory_value: number;
     low_stock_count: number;
-    active_reservations: number;
-    recent_transactions: StockTransaction[];
-    top_categories: {
+    pending_reservations: number;
+    today_transactions: number;
+    weekly_sales: number;
+    monthly_procurement: number;
+    job_pipeline: {
+        completed: number;
+        in_progress: number;
+        queued: number;
+    };
+    total_items?: number;
+    total_value?: number;
+    active_reservations?: number;
+    recent_transactions?: Array<{
+        id: number;
+        item_id: number;
+        transaction_type: string;
+        quantity: number;
+        created_at: string;
+        inventory_item?: {
+            item_id: number | null;
+            item_name: string | null;
+        };
+    }>;
+    top_categories?: Array<{
         category: string;
         count: number;
         value: number;
-    }[];
+    }>;
+    monthly_trends?: Array<{
+        month: string;
+        procurement_value: number;
+        usage_value: number;
+    }>;
 }
 
 export interface UsageReport {
