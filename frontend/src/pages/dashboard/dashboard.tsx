@@ -1,7 +1,7 @@
 import AppLayout from '@/components/layout/app-layout';
 import { useAuth } from '@/context/AuthContext';
 import { cloneServicePlaceholders } from '@/data/servicePlaceholders';
-import { useDashboardAnalytics } from '@/hooks/useInventory';
+import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { type BreadcrumbItem } from '@/types';
 import { ArrowRight, ClipboardList, Loader2, Package, Sparkles, TriangleAlert, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -25,6 +25,12 @@ export default function Dashboard() {
     const averageServicePrice = activeServices.length > 0 ? totalServiceValue / activeServices.length : 0;
 
     const topQueueServices = activeServices.filter((service) => Boolean(service.queue_label)).slice(0, 4);
+
+    // Job pipeline metrics from analytics
+    const jobPipeline = analytics?.job_pipeline;
+    const todayTransactions = analytics?.today_transactions ?? 0;
+    const weeklySales = analytics?.weekly_sales ?? 0;
+    const monthlyProcurement = analytics?.monthly_procurement ?? 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -161,20 +167,20 @@ export default function Dashboard() {
                             <h2 className="text-base font-semibold">Operations Pulse</h2>
                             <div className="mt-4 space-y-3">
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Inventory Items</p>
-                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (analytics?.total_items ?? 0)}</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Today's Transactions</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : todayTransactions}</p>
                                 </div>
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Active Reservations</p>
-                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (analytics?.active_reservations ?? 0)}</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Completed Jobs</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (jobPipeline?.completed ?? 0)}</p>
                                 </div>
                                 <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Inventory Value</p>
-                                    <p className="mt-1 text-lg font-bold">
-                                        {analyticsLoading
-                                            ? '...'
-                                            : `P${(analytics?.total_value ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
-                                    </p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">In Progress</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (jobPipeline?.in_progress ?? 0)}</p>
+                                </div>
+                                <div className="rounded-lg border border-[#2a2a2e] bg-[#0d0d10] p-3">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase">Queued Jobs</p>
+                                    <p className="mt-1 text-lg font-bold">{analyticsLoading ? '...' : (jobPipeline?.queued ?? 0)}</p>
                                 </div>
                             </div>
 
