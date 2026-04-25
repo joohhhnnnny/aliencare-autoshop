@@ -270,9 +270,21 @@ function normalizeUsagePayload(raw: unknown): UsageAnalyticsView {
     }
 
     const summary = isRecord(raw.summary) ? raw.summary : null;
-    const totalTransactions = toNumber(summary?.total_transactions, toNumber(raw.total_transactions, topItems.reduce((sum, item) => sum + item.count, 0)));
-    const totalConsumed = toNumber(summary?.total_consumed, topItems.reduce((sum, item) => sum + item.count, 0));
-    const totalCost = toNumber(summary?.total_cost, topItems.reduce((sum, item) => sum + item.cost, 0));
+    const totalTransactions = toNumber(
+        summary?.total_transactions,
+        toNumber(
+            raw.total_transactions,
+            topItems.reduce((sum, item) => sum + item.count, 0),
+        ),
+    );
+    const totalConsumed = toNumber(
+        summary?.total_consumed,
+        topItems.reduce((sum, item) => sum + item.count, 0),
+    );
+    const totalCost = toNumber(
+        summary?.total_cost,
+        topItems.reduce((sum, item) => sum + item.cost, 0),
+    );
 
     return {
         totalTransactions,
@@ -490,7 +502,10 @@ export default function Reports() {
             return [];
         }
 
-        const totalCompleted = Math.max(1, data.usage.topItems.reduce((sum, item) => sum + item.count, 0));
+        const totalCompleted = Math.max(
+            1,
+            data.usage.topItems.reduce((sum, item) => sum + item.count, 0),
+        );
 
         return data.usage.topItems.slice(0, 5).map((item) => {
             const completionRate = clampPercent((item.count / totalCompleted) * 100);
@@ -685,7 +700,9 @@ export default function Reports() {
                                     })}
                                 </svg>
                                 {chartSeries.labels.length === 0 && (
-                                    <p className="mt-2 text-center text-xs text-muted-foreground">No usage trend data found for the selected range.</p>
+                                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                                        No usage trend data found for the selected range.
+                                    </p>
                                 )}
                             </div>
 
@@ -811,7 +828,8 @@ export default function Reports() {
                                             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                                                 <span>Completion Confidence: {formatPercentage(row.completionRate)}</span>
                                                 <span className="inline-flex items-center gap-1">
-                                                    <Clock3 className="h-3.5 w-3.5" /> {row.averageHours !== null ? `Avg ${row.averageHours.toFixed(1)}h` : 'Avg N/A'}
+                                                    <Clock3 className="h-3.5 w-3.5" />{' '}
+                                                    {row.averageHours !== null ? `Avg ${row.averageHours.toFixed(1)}h` : 'Avg N/A'}
                                                 </span>
                                             </div>
                                         </div>

@@ -85,9 +85,9 @@ class JobOrderRepository extends BaseRepository implements JobOrderRepositoryInt
             $source = strtolower(trim((string) $filters['source']));
 
             if (in_array($source, ['online', 'online booking', 'online_booking', 'online-booking'], true)) {
-                $query->whereHas('reservations');
+                $query->where('source', 'online_booking');
             } elseif (in_array($source, ['walkin', 'walk in', 'walk-in', 'walk_in'], true)) {
-                $query->whereDoesntHave('reservations');
+                $query->where('source', 'walk_in');
             }
         }
 

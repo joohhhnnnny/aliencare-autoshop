@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Enums\JobOrderSource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,13 +12,18 @@ class JobOrderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $source = $this->source;
+        $sourceLabel = $source instanceof JobOrderSource
+            ? $source->label()
+            : ((string) $source === JobOrderSource::OnlineBooking->value ? 'Online Booking' : 'Walk-in');
+
         return [
             'id' => $this->id,
             'jo_number' => $this->jo_number,
             'status' => $this->status,
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
-            'source' => $this->resource->isOnlineBooking() ? 'Online Booking' : 'Walk-in',
+            'source' => $sourceLabel,
             'service_fee' => (float) $this->service_fee,
             'total_cost' => $this->when(
                 $this->relationLoaded('items'),

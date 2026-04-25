@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Contracts\Repositories\JobOrderRepositoryInterface;
 use App\Contracts\Services\JobOrderServiceInterface;
 use App\Enums\BayStatus;
+use App\Enums\JobOrderSource;
 use App\Enums\JobOrderItemType;
 use App\Enums\JobOrderStatus;
 use App\Enums\MechanicAvailability;
@@ -29,6 +30,7 @@ class JobOrderService implements JobOrderServiceInterface
     public function createJobOrder(array $data): JobOrder
     {
         $data['status'] = JobOrderStatus::Created;
+        $data['source'] = JobOrderSource::WalkIn;
 
         return $this->jobOrderRepository->create($data);
     }

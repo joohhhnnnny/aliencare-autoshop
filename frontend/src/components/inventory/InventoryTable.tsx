@@ -84,7 +84,7 @@ export function InventoryTable() {
 
                   const matchesStock = stockFilter === 'all' || (stockFilter === 'low' && part?.stock <= part?.reorder_level);
 
-                                    return !isDiscontinued && matchesSearch && matchesCategory && matchesStock;
+                  return !isDiscontinued && matchesSearch && matchesCategory && matchesStock;
               })
             : [];
 
@@ -209,7 +209,9 @@ export function InventoryTable() {
     };
 
     const handleDiscontinueItem = async (item: InventoryItem) => {
-        const confirmed = window.confirm(`Discontinue ${item.item_name}? This marks the item as discontinued and hides it from active inventory views.`);
+        const confirmed = window.confirm(
+            `Discontinue ${item.item_name}? This marks the item as discontinued and hides it from active inventory views.`,
+        );
 
         if (!confirmed) {
             return;

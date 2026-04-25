@@ -143,8 +143,18 @@ function formatRelativeTime(isoTimestamp: string): string {
     return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
-function getSourceLabel(order: JobOrder): 'Online Booking' | 'Walk-in' {
-    return order.source === 'Online Booking' ? 'Online Booking' : 'Walk-in';
+function getSourceLabel(order: JobOrder): 'Online Booking' | 'Walk-in' | 'Unknown' {
+    const source = typeof order.source === 'string' ? order.source.trim() : '';
+
+    if (source === 'Online Booking') {
+        return 'Online Booking';
+    }
+
+    if (source === 'Walk-in') {
+        return 'Walk-in';
+    }
+
+    return 'Unknown';
 }
 
 function getEstimatedAmount(order: JobOrder): number {

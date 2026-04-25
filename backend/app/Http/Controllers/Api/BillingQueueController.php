@@ -24,9 +24,10 @@ class BillingQueueController extends Controller
         $sourceFilter = strtolower(trim((string) ($validated['source'] ?? 'all')));
         $statusFilter = strtolower(trim((string) ($validated['status'] ?? 'all')));
 
-        $serviceSourceExpr = "CASE WHEN EXISTS (
-            SELECT 1 FROM reservations r WHERE r.job_order_id = job_orders.id
-        ) THEN 'online_booking' ELSE 'walk_in' END";
+        $serviceSourceExpr = "CASE
+            WHEN job_orders.source = 'online_booking' THEN 'online_booking'
+            ELSE 'walk_in'
+        END";
 
         $serviceSubtotalExpr = '(
             COALESCE(job_orders.service_fee, 0)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Enums\UserRole;
 use App\Models\Archive;
 use App\Models\Inventory;
 use App\Models\StockTransaction;
@@ -20,7 +21,7 @@ class TransactionArchiveApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create(['role' => UserRole::Admin]);
     }
 
     // STOCK TRANSACTION INDEX TESTS
