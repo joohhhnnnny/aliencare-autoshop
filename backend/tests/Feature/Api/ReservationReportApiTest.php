@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Models\Customer;
 use App\Models\Inventory;
 use App\Models\JobOrder;
 use App\Models\Report;
@@ -57,7 +58,7 @@ class ReservationReportApiTest extends TestCase
 
     public function test_customer_can_only_view_owned_reservations_with_mine_filter(): void
     {
-        $customerProfile = \App\Models\Customer::factory()->create([
+        $customerProfile = Customer::factory()->create([
             'email' => $this->customerUser->email,
         ]);
 
