@@ -18,6 +18,7 @@ class StoreJobOrderRequest extends FormRequest
         return [
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
+            'source' => ['prohibited'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'service_fee' => ['nullable', 'numeric', 'min:0'],
         ];
@@ -30,6 +31,7 @@ class StoreJobOrderRequest extends FormRequest
             'customer_id.exists' => 'Selected customer does not exist.',
             'vehicle_id.required' => 'Vehicle is required.',
             'vehicle_id.exists' => 'Selected vehicle does not exist.',
+            'source.prohibited' => 'Source is managed by the system.',
             'service_fee.min' => 'Service fee cannot be negative.',
         ];
     }

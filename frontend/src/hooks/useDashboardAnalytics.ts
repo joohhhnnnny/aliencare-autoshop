@@ -3,8 +3,8 @@
  * Provides real-time dashboard metrics with loading states and error handling
  */
 
-import { DashboardAnalytics } from '@/types/inventory';
 import { dashboardService } from '@/services/dashboardService';
+import { DashboardAnalytics } from '@/types/inventory';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useDashboardAnalytics() {

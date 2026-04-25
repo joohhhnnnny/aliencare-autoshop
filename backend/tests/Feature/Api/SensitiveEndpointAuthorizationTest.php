@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -36,7 +37,7 @@ class SensitiveEndpointAuthorizationTest extends TestCase
     {
         Config::set('inventory.security.restrict_sensitive_endpoints', false);
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => UserRole::Admin]);
 
         $this->actingAs($user)
             ->getJson('/api/v1/archives')
@@ -66,7 +67,7 @@ class SensitiveEndpointAuthorizationTest extends TestCase
 
     public function test_verified_user_can_access_when_allowlisted_by_email(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => UserRole::Admin]);
 
         Config::set('inventory.security.restrict_sensitive_endpoints', true);
         Config::set('inventory.security.sensitive_user_ids', []);

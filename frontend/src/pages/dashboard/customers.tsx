@@ -2,6 +2,7 @@ import AppLayout from '@/components/layout/app-layout';
 import { flattenValidationErrors } from '@/lib/validation-errors';
 import { ApiError } from '@/services/api';
 import { frontdeskCustomerService } from '@/services/frontdeskCustomerService';
+import { type BreadcrumbItem } from '@/types';
 import {
     CustomerTier,
     CustomerTierMode,
@@ -11,7 +12,6 @@ import {
     FrontdeskVehicle,
     FrontdeskVehiclePayload,
 } from '@/types/frontdesk/customers';
-import { type BreadcrumbItem } from '@/types';
 import { Car, Check, Crown, Download, Loader2, Mail, Minus, Phone, Plus, Search, UserPlus, X } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -862,7 +862,9 @@ export default function Customers() {
                                 <div className="flex h-full flex-col gap-4">
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{selectedCustomer.code}</p>
+                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                {selectedCustomer.code}
+                                            </p>
                                             <h2 className="mt-2 text-2xl leading-tight font-bold">{selectedCustomer.full_name}</h2>
                                             <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                                 {buildCustomerBadges(selectedCustomer).map((tier) => (
@@ -887,7 +889,8 @@ export default function Customers() {
                                                     disabled={isApproving}
                                                     className="inline-flex items-center justify-center gap-1 rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs font-semibold text-emerald-300 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                                                 >
-                                                    {isApproving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Approve
+                                                    {isApproving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}{' '}
+                                                    Approve
                                                 </button>
                                                 <button
                                                     onClick={openRejectModal}
@@ -1005,7 +1008,8 @@ export default function Customers() {
                                             disabled={isSavingTiers}
                                             className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#2a2a2e] px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:border-[#d4af37]/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                                         >
-                                            {isSavingTiers ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Save Tier Settings
+                                            {isSavingTiers ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}{' '}
+                                            Save Tier Settings
                                         </button>
                                     </div>
 
@@ -1027,12 +1031,12 @@ export default function Customers() {
                                                 </div>
                                             ) : (
                                                 (selectedCustomer.vehicles ?? []).map((vehicle) => (
-                                                    <div key={`${selectedCustomer.id}-${vehicle.id}`} className="rounded-lg border border-[#23252b] bg-[#111217] p-2.5">
+                                                    <div
+                                                        key={`${selectedCustomer.id}-${vehicle.id}`}
+                                                        className="rounded-lg border border-[#23252b] bg-[#111217] p-2.5"
+                                                    >
                                                         <div className="flex items-start justify-between">
-                                                            <button
-                                                                onClick={() => openEditVehicleModal(vehicle)}
-                                                                className="text-left"
-                                                            >
+                                                            <button onClick={() => openEditVehicleModal(vehicle)} className="text-left">
                                                                 <p className="inline-flex items-center gap-1 text-sm font-semibold">
                                                                     <Car className="h-3.5 w-3.5 text-[#d4af37]" />
                                                                     {vehicle.make} {vehicle.model}
@@ -1058,7 +1062,9 @@ export default function Customers() {
                                                             </div>
                                                             <div className="flex items-center justify-between text-muted-foreground">
                                                                 <span>Last Service</span>
-                                                                <span className="text-foreground">{formatRelativeTime(vehicle.last_service_at, 'No service yet')}</span>
+                                                                <span className="text-foreground">
+                                                                    {formatRelativeTime(vehicle.last_service_at, 'No service yet')}
+                                                                </span>
                                                             </div>
                                                             <div className="flex items-center justify-between text-muted-foreground">
                                                                 <span>Next Due</span>

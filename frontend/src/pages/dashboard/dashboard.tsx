@@ -29,8 +29,6 @@ export default function Dashboard() {
     // Job pipeline metrics from analytics
     const jobPipeline = analytics?.job_pipeline;
     const todayTransactions = analytics?.today_transactions ?? 0;
-    const weeklySales = analytics?.weekly_sales ?? 0;
-    const monthlyProcurement = analytics?.monthly_procurement ?? 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

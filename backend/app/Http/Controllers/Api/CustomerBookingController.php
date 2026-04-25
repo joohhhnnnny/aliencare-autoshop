@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Enums\CustomerTransactionType;
+use App\Enums\JobOrderSource;
 use App\Enums\JobOrderStatus;
 use App\Exceptions\PaymentGatewayException;
 use App\Http\Controllers\Controller;
@@ -426,6 +427,7 @@ class CustomerBookingController extends Controller
         $jobOrder = JobOrder::create([
             'customer_id' => $customer->id,
             'vehicle_id' => $validated['vehicle_id'],
+            'source' => JobOrderSource::OnlineBooking,
             'service_id' => $service->id,
             'arrival_date' => $validated['arrival_date'],
             'arrival_time' => $validated['arrival_time'],

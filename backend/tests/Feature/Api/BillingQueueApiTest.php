@@ -78,10 +78,8 @@ class BillingQueueApiTest extends TestCase
     {
         $customer = Customer::factory()->create();
 
-        $jobOrder = $this->createServiceTicket($customer);
-        Reservation::factory()->pending()->create([
-            'job_order_id' => $jobOrder->id,
-            'job_order_number' => $jobOrder->jo_number,
+        $this->createServiceTicket($customer, [
+            'source' => 'online_booking',
         ]);
 
         $response = $this->actingAs($this->frontDeskUser)
@@ -139,6 +137,35 @@ class BillingQueueApiTest extends TestCase
         $this->actingAs($this->customerUser)
             ->getJson('/api/v1/billing/queue')
             ->assertStatus(403);
+    }
+
+    public function test_walk_in_job_order_stays_walk_in_even_with_linked_reservation(): void
+    {
+        $customer = Customer::factory()->create();
+
+        $jobOrder = $this->createServiceTicket($customer, [
+            'source' => 'walk_in',
+        ]);
+
+        Reservation::factory()->pending()->create([
+            'job_order_id' => $jobOrder->id,
+            'job_order_number' => $jobOrder->jo_number,
+        ]);
+
+        $response = $this->actingAs($this->frontDeskUser)
+            ->getJson('/api/v1/billing/queue?source=walk_in');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        $rows = collect($response->json('data.data'));
+
+        $jobOrderRow = $rows->first(function (array $row) use ($jobOrder): bool {
+            return $row['entity_type'] === 'job_order' && (int) $row['entity_id'] === $jobOrder->id;
+        });
+
+        $this->assertNotNull($jobOrderRow);
+        $this->assertSame('walk_in', $jobOrderRow['source']);
     }
 
     private function createServiceTicket(Customer $customer, array $overrides = []): JobOrder

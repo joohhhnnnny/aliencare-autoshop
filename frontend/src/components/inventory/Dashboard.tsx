@@ -1,6 +1,6 @@
 import { useDashboardAnalytics, useLowStockAlerts } from '@/hooks/useInventory';
 import { useReservationsSummary } from '@/hooks/useReservations';
-import type { InventoryItem, StockTransaction } from '@/types/inventory';
+import type { InventoryItem } from '@/types/inventory';
 import { AlertTriangle, Clock, Loader2, Package, TrendingDown } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
@@ -178,7 +178,7 @@ export function Dashboard() {
                                 <span className="text-sm text-muted-foreground">Loading transactions...</span>
                             </div>
                         ) : analytics?.recent_transactions && analytics.recent_transactions.length > 0 ? (
-                            analytics.recent_transactions.slice(0, 5).map((transaction: StockTransaction, index: number) => (
+                            analytics.recent_transactions.slice(0, 5).map((transaction, index) => (
                                 <div
                                     key={transaction.id || `transaction-${index}-${transaction.item_id}`}
                                     className="flex items-center justify-between text-sm"

@@ -120,15 +120,10 @@ class JobOrderApiTest extends TestCase
 
     public function test_index_filters_by_source(): void
     {
-        $onlineJobOrder = JobOrder::factory()->create([
+        JobOrder::factory()->create([
             'customer_id' => $this->customer->id,
             'vehicle_id' => $this->vehicle->id,
-        ]);
-
-        Reservation::factory()->create([
-            'job_order_id' => $onlineJobOrder->id,
-            'job_order_number' => $onlineJobOrder->jo_number,
-            'customer_id' => $this->customer->id,
+            'source' => 'online_booking',
         ]);
 
         JobOrder::factory()->create([
@@ -153,6 +148,27 @@ class JobOrderApiTest extends TestCase
 
         $this->assertCount(1, $walkInData);
         $this->assertSame('Walk-in', $walkInData[0]['source']);
+    }
+
+    public function test_walk_in_source_remains_walk_in_even_with_linked_reservation(): void
+    {
+        $jobOrder = JobOrder::factory()->create([
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'source' => 'walk_in',
+        ]);
+
+        Reservation::factory()->pending()->create([
+            'job_order_id' => $jobOrder->id,
+            'job_order_number' => $jobOrder->jo_number,
+            'customer_id' => $this->customer->id,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->getJson("/api/v1/job-orders/{$jobOrder->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.source', 'Walk-in');
     }
 
     // STORE TESTS
@@ -185,6 +201,20 @@ class JobOrderApiTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['customer_id', 'vehicle_id']);
+    }
+
+    public function test_store_rejects_source_override_input(): void
+    {
+        $payload = [
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'source' => 'online_booking',
+        ];
+
+        $this->actingAs($this->user)
+            ->postJson('/api/v1/job-orders', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['source']);
     }
 
     public function test_store_response_includes_source_and_balance_fields(): void

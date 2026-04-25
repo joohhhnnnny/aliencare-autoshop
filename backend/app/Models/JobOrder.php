@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\CustomerTransactionType;
+use App\Enums\JobOrderSource;
 use App\Enums\JobOrderStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,7 @@ class JobOrder extends Model
         'jo_number',
         'customer_id',
         'vehicle_id',
+        'source',
         'service_id',
         'arrival_date',
         'arrival_time',
@@ -40,6 +42,7 @@ class JobOrder extends Model
     {
         return [
             'status' => JobOrderStatus::class,
+            'source' => JobOrderSource::class,
             'service_fee' => 'decimal:2',
             'settled_flag' => 'boolean',
             'approved_at' => 'datetime',
@@ -53,6 +56,10 @@ class JobOrder extends Model
         static::creating(function (JobOrder $jobOrder) {
             if (empty($jobOrder->jo_number)) {
                 $jobOrder->jo_number = self::generateJoNumber();
+            }
+
+            if (empty($jobOrder->source)) {
+                $jobOrder->source = JobOrderSource::WalkIn;
             }
         });
     }
@@ -129,11 +136,7 @@ class JobOrder extends Model
 
     public function isOnlineBooking(): bool
     {
-        if ($this->relationLoaded('reservations')) {
-            return $this->reservations->isNotEmpty();
-        }
-
-        return $this->reservations()->exists();
+        return $this->source === JobOrderSource::OnlineBooking;
     }
 
     public function service(): BelongsTo

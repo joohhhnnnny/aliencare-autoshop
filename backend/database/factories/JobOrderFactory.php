@@ -21,10 +21,18 @@ class JobOrderFactory extends Factory
         return [
             'customer_id' => Customer::factory(),
             'vehicle_id' => Vehicle::factory(),
+            'source' => 'walk_in',
             'status' => 'created',
             'service_fee' => $this->faker->randomFloat(2, 500, 5000),
             'notes' => $this->faker->optional(0.6)->sentence(),
         ];
+    }
+
+    public function onlineBooking(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'source' => 'online_booking',
+        ]);
     }
 
     public function pendingApproval(): static
