@@ -56,6 +56,7 @@
 
 # Dev tools
 /dev-tools
+/.tools
 
 # Misc
 npm-debug.log
