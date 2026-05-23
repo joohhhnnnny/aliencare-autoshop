@@ -138,11 +138,24 @@ function paymentMethodLabel(method: string | null): string {
         .join(' ');
 }
 
-function transactionCountsAsPaid(transaction: CustomerTransaction): boolean {
+function transactionCountsAsPaid(transaction: CustomerTransaction, allTransactions?: CustomerTransaction[]): boolean {
     const status = (transaction.xendit_status ?? '').toUpperCase();
 
     if (transaction.type === 'invoice' || transaction.type === 'reservation_fee') {
-        return status === 'PAID';
+        if (status === 'PAID' || transaction.paid_at !== null) return true;
+
+        if (allTransactions?.length) {
+            return allTransactions.some(
+                (t) =>
+                    t.id !== transaction.id &&
+                    t.type === 'payment' &&
+                    transactionCountsAsPaid(t) &&
+                    ((transaction.job_order_id !== null && t.job_order_id === transaction.job_order_id) ||
+                        (transaction.reference_number !== null && t.reference_number === transaction.reference_number)),
+            );
+        }
+
+        return false;
     }
 
     if (transaction.type === 'payment') {
@@ -150,6 +163,22 @@ function transactionCountsAsPaid(transaction: CustomerTransaction): boolean {
     }
 
     return status === 'PAID' || transaction.paid_at !== null;
+}
+
+function canPrintTransactionReceipt(
+    transaction: CustomerTransaction,
+    allTransactions: CustomerTransaction[],
+    selectedJobOrder: { status: string } | null,
+): boolean {
+    if (transactionCountsAsPaid(transaction, allTransactions)) return true;
+
+    if (transaction.type === 'invoice' && selectedJobOrder) {
+        if (selectedJobOrder.status === 'completed' || selectedJobOrder.status === 'settled') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function transactionLockedForAmount(transaction: CustomerTransaction): boolean {
@@ -462,7 +491,8 @@ export default function Billing() {
         try {
             setPrintingTransactionId(transaction.id);
             const response = await billingService.getReceiptDetail(transaction.id);
-            const printData = mapCustomerBillingReceiptToPrintData(response.data);
+            const isEffectivelyPaid = transactionCountsAsPaid(transaction, selectedTransactions);
+            const printData = mapCustomerBillingReceiptToPrintData(response.data, isEffectivelyPaid);
             pw.document.close();
             pw.document.open();
             pw.document.write(buildReceiptHtml(printData));
@@ -907,7 +937,7 @@ export default function Billing() {
                                                                                     onClick={() => handlePrintReceipt(transaction)}
                                                                                     disabled={
                                                                                         printingTransactionId === transaction.id ||
-                                                                                        !transactionCountsAsPaid(transaction)
+                                                                                        !canPrintTransactionReceipt(transaction, selectedTransactions, selectedJobOrder)
                                                                                     }
                                                                                     className="inline-flex items-center gap-1 rounded-md border border-[#2a2a2e] px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-[#d4af37]/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                                                                                     title="Print receipt"
