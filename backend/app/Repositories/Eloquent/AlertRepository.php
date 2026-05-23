@@ -134,6 +134,18 @@ class AlertRepository extends BaseRepository implements AlertRepositoryInterface
     /**
      * {@inheritDoc}
      */
+    public function findExistingExpiryAlert(int $itemId): ?Alert
+    {
+        return $this->model
+            ->where('item_id', $itemId)
+            ->where('alert_type', 'expiry')
+            ->where('acknowledged', false)
+            ->first();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function bulkAcknowledge(array $ids, string $acknowledgedBy): int
     {
         return $this->model
@@ -195,5 +207,18 @@ class AlertRepository extends BaseRepository implements AlertRepositoryInterface
             ],
             'alerts_by_type' => $byType,
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getAlertTrends(int $days = 30): Collection
+    {
+        return $this->model
+            ->where('created_at', '>=', now()->subDays($days))
+            ->selectRaw("DATE(created_at) as date, alert_type, COUNT(*) as count")
+            ->groupBy('date', 'alert_type')
+            ->orderBy('date')
+            ->get();
     }
 }

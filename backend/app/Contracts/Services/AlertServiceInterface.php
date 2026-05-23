@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts\Services;
 
 use App\Models\Alert;
+use App\Models\Inventory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
@@ -42,12 +43,21 @@ interface AlertServiceInterface
     public function generateLowStockAlerts(): array;
 
     /**
+     * Handle a single low-stock item, creating or updating its alert.
+     */
+    public function handleSingleItemLowStock(Inventory $item): Alert;
+
+    /**
      * Get alert statistics and summary.
      *
      * @return array{
-     *     total_unacknowledged: int,
-     *     by_urgency: array,
-     *     by_type: array,
+     *     total_alerts: int,
+     *     unacknowledged_alerts: int,
+     *     acknowledged_alerts: int,
+     *     critical_alerts: int,
+     *     high_priority_alerts: int,
+     *     alerts_by_urgency: array,
+     *     alerts_by_type: array,
      *     recent_alerts: Collection
      * }
      */
@@ -87,4 +97,22 @@ interface AlertServiceInterface
      * }
      */
     public function cleanupAlerts(int $daysOld = 30): array;
+
+    /**
+     * Generate expiry alerts for items expiring soon.
+     *
+     * @return array{
+     *     created: int,
+     *     updated: int,
+     *     alerts: Collection
+     * }
+     */
+    public function generateExpiryAlerts(): array;
+
+    /**
+     * Get daily alert trends for chart display.
+     *
+     * @return Collection<int, object{date: string, alert_type: string, count: int}>
+     */
+    public function getAlertTrends(int $days = 30): Collection;
 }

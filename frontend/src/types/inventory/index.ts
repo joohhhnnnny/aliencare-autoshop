@@ -13,6 +13,7 @@ export interface InventoryItem {
     unit_price: number;
     supplier: string | null;
     location: string | null;
+    expiry_date?: string | null;
     status: 'active' | 'inactive' | 'discontinued' | string;
     is_low_stock?: boolean;
     stock_status?: string | null;

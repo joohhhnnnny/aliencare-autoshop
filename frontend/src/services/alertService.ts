@@ -88,8 +88,22 @@ class AlertService {
     }
 
     // Acknowledge a specific alert
-    async acknowledgeAlert(alertId: number): Promise<ApiResponse<Alert>> {
-        return api.put<ApiResponse<Alert>>(`/v1/alerts/${alertId}/acknowledge`);
+    async acknowledgeAlert(alertId: number, notes?: string): Promise<ApiResponse<Alert>> {
+        const payload: Record<string, unknown> = {};
+        if (notes) {
+            payload.notes = notes;
+        }
+        return api.put<ApiResponse<Alert>>(`/v1/alerts/${alertId}/acknowledge`, payload);
+    }
+
+    // Generate expiry alerts for items expiring soon
+    async generateExpiryAlerts(): Promise<ApiResponse<AlertGenerationResult>> {
+        const response = await api.post<ApiResponse<AlertGenerationResult>>('/v1/alerts/generate-expiry');
+
+        return {
+            ...response,
+            data: normalizeAlertGenerationResult(response.data),
+        };
     }
 
     // Bulk acknowledge multiple alerts
@@ -135,6 +149,11 @@ class AlertService {
     // Get high priority alerts
     async getHighPriorityAlerts(): Promise<ApiResponse<PaginatedResponse<Alert>>> {
         return this.getAlerts({ acknowledged: false, urgency: 'high' });
+    }
+
+    // Get alert trends data for chart display
+    async getAlertTrends(days: number = 30): Promise<ApiResponse<Array<{ date: string; alert_type: string; count: number }>>> {
+        return api.get<ApiResponse<Array<{ date: string; alert_type: string; count: number }>>>(`/v1/alerts/trends?days=${days}`);
     }
 }
 

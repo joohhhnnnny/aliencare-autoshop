@@ -110,4 +110,11 @@ interface InventoryRepositoryInterface
      * Get count of items with zero stock.
      */
     public function getOutOfStockCount(): int;
+
+    /**
+     * Get items expiring within the given number of days.
+     *
+     * @param  int  $days  Number of days until expiry
+     */
+    public function getExpiringSoonItems(int $days): Collection;
 }

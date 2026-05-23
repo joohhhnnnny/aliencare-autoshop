@@ -37,6 +37,7 @@ class UpdateInventoryRequest extends FormRequest
             'unit_price' => ['sometimes', 'required', 'numeric', 'min:0'],
             'supplier' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
+            'expiry_date' => ['nullable', 'date', 'after:today'],
             'status' => ['nullable', 'string', 'in:active,inactive,discontinued'],
         ];
     }

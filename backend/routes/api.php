@@ -182,7 +182,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum', 'throttle:api'
     Route::prefix('alerts')->name('alerts.')->group(function () {
         Route::get('/', [AlertController::class, 'index'])->name('index');
         Route::get('/statistics', [AlertController::class, 'getAlertStatistics'])->name('statistics');
+        Route::get('/trends', [AlertController::class, 'trends'])->name('trends');
         Route::post('/generate-low-stock', [AlertController::class, 'generateLowStockAlerts'])->name('generate.low-stock');
+        Route::post('/generate-expiry', [AlertController::class, 'generateExpiryAlerts'])->name('generate.expiry');
         Route::put('/{id}/acknowledge', [AlertController::class, 'acknowledge'])->name('acknowledge');
         Route::post('/bulk-acknowledge', [AlertController::class, 'bulkAcknowledge'])->name('bulk-acknowledge');
         Route::delete('/cleanup', [AlertController::class, 'cleanup'])->name('cleanup');

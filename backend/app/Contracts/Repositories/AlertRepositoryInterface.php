@@ -81,6 +81,13 @@ interface AlertRepositoryInterface
     public function findExistingLowStockAlert(int $itemId): ?Alert;
 
     /**
+     * Find an existing expiry alert for an inventory item.
+     *
+     * @param  int  $itemId  The inventory item ID
+     */
+    public function findExistingExpiryAlert(int $itemId): ?Alert;
+
+    /**
      * Bulk acknowledge multiple alerts.
      *
      * @param  array<int>  $ids  Array of alert IDs to acknowledge
@@ -111,4 +118,11 @@ interface AlertRepositoryInterface
      * }
      */
     public function getStatistics(): array;
+
+    /**
+     * Get daily alert trends for the given number of days.
+     *
+     * @return Collection<int, object{date: string, alert_type: string, count: int}>
+     */
+    public function getAlertTrends(int $days = 30): Collection;
 }

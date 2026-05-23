@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Contracts\Services\AlertServiceInterface;
 use App\Events\LowStockAlert;
-use App\Models\Alert;
 use App\Models\Report;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 class HandleLowStockAlert implements ShouldQueue
 {
@@ -19,10 +18,9 @@ class HandleLowStockAlert implements ShouldQueue
     /**
      * Create the event listener.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        private AlertServiceInterface $alertService
+    ) {}
 
     /**
      * Handle the event.
@@ -31,6 +29,9 @@ class HandleLowStockAlert implements ShouldQueue
     {
         try {
             $inventory = $event->inventory;
+
+            // Delegate alert creation/update to the service for consistent urgency logic
+            $this->alertService->handleSingleItemLowStock($inventory);
 
             // Create low stock alert report
             $alertData = [
@@ -55,7 +56,6 @@ class HandleLowStockAlert implements ShouldQueue
                 'generated_by' => 'System - Auto Alert',
             ]);
 
-            // Log the alert
             Log::warning('Low stock alert generated', [
                 'item_id' => $inventory->item_id,
                 'item_name' => $inventory->item_name,
@@ -63,36 +63,6 @@ class HandleLowStockAlert implements ShouldQueue
                 'reorder_level' => $inventory->reorder_level,
                 'alert_level' => $event->alertLevel,
             ]);
-
-            // Create Alert record in database
-            $urgency = $event->alertLevel === 'critical' ? 'critical' : 'high';
-            $alertType = $inventory->stock == 0 ? 'out_of_stock' : 'low_stock';
-
-            $message = $urgency === 'critical'
-                ? "CRITICAL: {$inventory->item_name} is out of stock! Immediate restocking required."
-                : "HIGH PRIORITY: {$inventory->item_name} stock is critically low ({$inventory->stock} units remaining).";
-
-            Alert::firstOrCreate(
-                [
-                    'item_id' => $inventory->item_id,
-                    'alert_type' => $alertType,
-                    'acknowledged' => false,
-                ],
-                [
-                    'item_name' => $inventory->item_name,
-                    'current_stock' => $inventory->stock,
-                    'reorder_level' => $inventory->reorder_level,
-                    'category' => $inventory->category,
-                    'supplier' => $inventory->supplier,
-                    'urgency' => $urgency,
-                    'message' => $message,
-                ]
-            );
-
-            // Here you could send notifications to managers, procurement team, etc.
-            // For example:
-            // $users = User::where('role', 'inventory_manager')->get();
-            // Notification::send($users, new LowStockNotification($inventory));
 
         } catch (\Exception $e) {
             Log::error('Failed to handle low stock alert: '.$e->getMessage(), [
