@@ -21,6 +21,7 @@ export interface ReceiptPrintData {
     lineItems: ReceiptPrintLineItem[];
     totalPaid: number;
     paymentMethod: string;
+    isPaid: boolean;
 }
 
 function escapeHtml(text: string): string {
@@ -62,11 +63,12 @@ function formatPaymentMethod(value: string | null | undefined): string {
         .join(' ');
 }
 
-export function mapCustomerBillingReceiptToPrintData(receipt: CustomerBillingReceipt): ReceiptPrintData {
+export function mapCustomerBillingReceiptToPrintData(receipt: CustomerBillingReceipt, isPaidOverride?: boolean): ReceiptPrintData {
     const receiptDate = receipt.paid_at ?? receipt.created_at;
     const year = receiptDate ? new Date(receiptDate).getFullYear() : new Date().getFullYear();
     const branch = receipt.branch_address ? `${receipt.branch_name}, ${receipt.branch_address}` : receipt.branch_name;
     const vehicle = [receipt.vehicle_make, receipt.vehicle_model].filter(Boolean).join(' ').trim() || 'Vehicle';
+    const isPaid = isPaidOverride ?? receipt.paid_at !== null;
 
     return {
         receiptNo: `RC-${year}-${String(receipt.transaction_id).padStart(5, '0')}`,
@@ -87,6 +89,7 @@ export function mapCustomerBillingReceiptToPrintData(receipt: CustomerBillingRec
         })),
         totalPaid: Number(receipt.amount_paid),
         paymentMethod: formatPaymentMethod(receipt.payment_method),
+        isPaid,
     };
 }
 
@@ -98,12 +101,33 @@ export function buildReceiptHtml(data: ReceiptPrintData): string {
         )
         .join('');
 
+    const badgeHtml = data.isPaid
+        ? '<span class="badge-paid">&#10003; Paid</span>'
+        : '<span class="badge-unpaid">&#9888; Unpaid</span>';
+
+    const watermarkHtml = data.isPaid
+        ? '<div class="watermark">PAID</div>'
+        : '';
+
+    const titleHtml = data.isPaid ? 'Full Payment Receipt' : 'Service Invoice';
+
+    const totalLabel = data.isPaid ? 'Total Paid' : 'Total Amount';
+
+    const statusColor = data.isPaid ? '#16a34a' : '#dc2626';
+    const statusText = data.isPaid ? 'Paid' : 'Unpaid';
+
+    const footerText = data.isPaid
+        ? 'Thank you! This receipt confirms that your full payment has been received for the requested services.'
+        : 'This is a statement of services rendered. Payment is due upon receipt.';
+
     return `<!DOCTYPE html><html><head><title>Receipt ${data.receiptNo}</title><style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:Arial,sans-serif;color:#111;background:#fff;padding:40px;font-size:13px}
         .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
         .brand p{font-weight:900;font-size:18px;line-height:1.15}
-        .badge{display:inline-flex;align-items:center;gap:6px;border:1px solid #16a34a;background:#f0fdf4;color:#16a34a;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}
+        .badge-paid{display:inline-flex;align-items:center;gap:6px;border:1px solid #16a34a;background:#f0fdf4;color:#16a34a;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}
+        .badge-unpaid{display:inline-flex;align-items:center;gap:6px;border:1px solid #dc2626;background:#fef2f2;color:#dc2626;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}
+        .watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:100px;font-weight:900;color:rgba(22,163,74,0.08);pointer-events:none;z-index:9999;border:5px solid rgba(22,163,74,0.12);padding:12px 36px;border-radius:16px;text-transform:uppercase;letter-spacing:14px}
         .title{text-align:center;color:#b8860b;font-size:15px;font-weight:700;margin:16px 0;padding:8px 0;border-top:1px solid #d4af37;border-bottom:1px solid #d4af37}
         .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px;margin:12px 0;font-size:13px}
         .muted{color:#666}.gold{color:#b8860b;font-weight:700}
@@ -111,11 +135,12 @@ export function buildReceiptHtml(data: ReceiptPrintData): string {
         .row{display:flex;justify-content:space-between;font-size:13px;margin:3px 0}
         .footer{font-size:11px;color:#666;margin-top:12px}
     </style></head><body>
+    ${watermarkHtml}
     <div class="header">
         <div class="brand"><p><span style="color:#b8860b">ALIEN</span>CARE</p><p>AUTOSHOP</p></div>
-        <span class="badge">&#10003; Paid</span>
+        ${badgeHtml}
     </div>
-    <div class="title">Full Payment Receipt</div>
+    <div class="title">${titleHtml}</div>
     <div class="grid2">
         <div><span class="muted">Receipt No </span><strong>${escapeHtml(data.receiptNo)}</strong></div>
         <div><span class="muted">Transaction ID </span><strong>${escapeHtml(data.transactionId)}</strong></div>
@@ -130,12 +155,12 @@ export function buildReceiptHtml(data: ReceiptPrintData): string {
     <div class="row"><span class="gold">Arrival</span><span class="muted">${escapeHtml(data.arrival)} &bull; ${escapeHtml(data.arrivalTime)}</span></div>
     <div class="row"><span class="gold">Branch</span><span class="muted">${escapeHtml(data.branch)}</span></div><hr/>
     ${lineItemsHtml}<hr/>
-    <div class="row"><span class="gold">Total Paid</span><span class="gold">&#8369;${data.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></div><hr/>
+    <div class="row"><span class="gold">${totalLabel}</span><span class="gold">&#8369;${data.totalPaid.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></div><hr/>
     <div class="grid2">
         <div><span class="muted">Payment Method </span><strong>${escapeHtml(data.paymentMethod)}</strong></div>
-        <div><span class="muted">Payment Status </span><strong style="color:#16a34a">Paid</strong></div>
+        <div><span class="muted">Payment Status </span><strong style="color:${statusColor}">${statusText}</strong></div>
     </div><hr/>
-    <p class="footer">Thank you! This receipt indicates that your full payment has been received for the requested services.</p>
+    <p class="footer">${footerText}</p>
     </body></html>`;
 }
 

@@ -19,7 +19,6 @@ use App\Models\BookingSlot;
 use App\Models\Customer;
 use App\Models\CustomerTransaction;
 use App\Models\JobOrder;
-use App\Models\JobOrderItem;
 use App\Models\OtpCode;
 use App\Models\ServiceCatalog;
 use App\Services\XenditService;
@@ -603,17 +602,6 @@ class CustomerBookingController extends Controller
             'approved_at' => $autoApprove ? now() : null,
             'service_fee' => $service->price_fixed,
             'notes' => $validated['notes'] ?? null,
-        ]);
-
-        // Keep the requested service in job order items so total-cost calculations stay consistent.
-        JobOrderItem::create([
-            'job_order_id' => $jobOrder->id,
-            'item_type' => 'service',
-            'item_id' => null,
-            'description' => $service->name,
-            'quantity' => 1,
-            'unit_price' => $service->price_fixed,
-            'total_price' => $service->price_fixed,
         ]);
 
         return $jobOrder;

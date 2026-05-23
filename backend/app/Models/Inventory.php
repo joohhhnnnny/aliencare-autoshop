@@ -26,6 +26,7 @@ class Inventory extends Model
         'unit_price',
         'supplier',
         'location',
+        'expiry_date',
         'status',
     ];
 
@@ -34,6 +35,7 @@ class Inventory extends Model
         'unit_price' => 'decimal:2',
         'stock' => 'integer',
         'reorder_level' => 'integer',
+        'expiry_date' => 'date:Y-m-d',
     ];
 
     /**
@@ -129,5 +131,31 @@ class Inventory extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope for items expiring within the given number of days.
+     */
+    public function scopeExpiringSoon($query, ?int $days = null)
+    {
+        $days = $days ?? config('inventory.expiring_soon_days', 3);
+
+        return $query->whereNotNull('expiry_date')
+            ->where('expiry_date', '>=', now()->toDateString())
+            ->where('expiry_date', '<=', now()->addDays($days)->toDateString());
+    }
+
+    /**
+     * Check if this item is expiring soon.
+     */
+    public function isExpiringSoon(): bool
+    {
+        if ($this->expiry_date === null) {
+            return false;
+        }
+        $days = config('inventory.expiring_soon_days', 3);
+
+        return $this->expiry_date->isFuture()
+            && $this->expiry_date->lte(now()->addDays($days));
     }
 }

@@ -36,6 +36,7 @@ class InventoryResource extends JsonResource
             'unit_price' => (float) $this->unit_price,
             'supplier' => $this->supplier,
             'location' => $this->location,
+            'expiry_date' => $this->expiry_date?->format('Y-m-d'),
             'status' => $this->status,
             'is_low_stock' => $this->isLowStock(),
             'stock_status' => $this->when(

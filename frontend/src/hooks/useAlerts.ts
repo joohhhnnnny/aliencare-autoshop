@@ -1,7 +1,8 @@
 import { getApiErrorMessage } from '@/lib/api-error-message';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AlertFilters, alertService, AlertStatistics } from '../services/alertService';
 import type { AlertGenerationResult } from '../services/inventoryWorkspaceNormalizers';
+import { inventoryEvents } from '../utils/inventoryEvents';
 
 interface UseAlertsState {
     alerts: Alert[];
@@ -16,12 +17,13 @@ interface UseAlertsState {
     };
 }
 
-interface UseAlertsReturn extends UseAlertsState {
+export interface UseAlertsReturn extends UseAlertsState {
     fetchAlerts: (filters?: AlertFilters) => Promise<void>;
     fetchStatistics: () => Promise<void>;
-    acknowledgeAlert: (alertId: number) => Promise<void>;
+    acknowledgeAlert: (alertId: number, notes?: string) => Promise<void>;
     bulkAcknowledgeAlerts: (alertIds: number[]) => Promise<{ acknowledged_count: number }>;
     generateLowStockAlerts: () => Promise<AlertGenerationResult>;
+    generateExpiryAlerts: () => Promise<AlertGenerationResult>;
     cleanupAlerts: (days?: number) => Promise<{ deleted_count: number }>;
     refresh: () => Promise<void>;
 }
@@ -136,10 +138,10 @@ export const useAlerts = (initialFilters: AlertFilters = {}): UseAlertsReturn =>
     }, []);
 
     const acknowledgeAlert = useCallback(
-        async (alertId: number) => {
+        async (alertId: number, notes?: string) => {
             try {
                 setError(null);
-                const response = await alertService.acknowledgeAlert(alertId);
+                const response = await alertService.acknowledgeAlert(alertId, notes);
 
                 if (response.success) {
                     // Update the alert in the local state
@@ -217,6 +219,24 @@ export const useAlerts = (initialFilters: AlertFilters = {}): UseAlertsReturn =>
         }
     }, [fetchAlerts, fetchStatistics]);
 
+    const generateExpiryAlerts = useCallback(async () => {
+        try {
+            setError(null);
+            const response = await alertService.generateExpiryAlerts();
+
+            if (response.success) {
+                await Promise.all([fetchAlerts(), fetchStatistics()]);
+                return response.data;
+            } else {
+                setError(response.message || 'Failed to generate expiry alerts');
+                throw new Error(response.message || 'Failed to generate expiry alerts');
+            }
+        } catch (error) {
+            setError(getApiErrorMessage(error, 'Failed to generate expiry alerts'));
+            throw error;
+        }
+    }, [fetchAlerts, fetchStatistics]);
+
     const cleanupAlerts = useCallback(
         async (days: number = 30) => {
             try {
@@ -248,6 +268,44 @@ export const useAlerts = (initialFilters: AlertFilters = {}): UseAlertsReturn =>
         fetchStatistics();
     }, [fetchAlerts, fetchStatistics]);
 
+    // Track previous critical count for notification detection
+    const prevCriticalRef = useRef(0);
+
+    // Subscribe to inventory events for cross-tab auto-refresh
+    useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        const cleanup = inventoryEvents.listenMultiple(
+            ['inventory-updated', 'stock-transaction', 'reservation-updated'],
+            () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    refresh();
+                }, 1500);
+            },
+        );
+
+        return () => {
+            clearTimeout(timeoutId);
+            cleanup();
+        };
+    }, [refresh]);
+
+    // Detect new critical alerts for notification
+    useEffect(() => {
+        if (state.statistics && state.statistics.critical_alerts > prevCriticalRef.current) {
+            const delta = state.statistics.critical_alerts - prevCriticalRef.current;
+            prevCriticalRef.current = state.statistics.critical_alerts;
+            window.dispatchEvent(
+                new CustomEvent('new-critical-alerts', {
+                    detail: { count: delta, total: state.statistics.critical_alerts },
+                }),
+            );
+        } else if (state.statistics) {
+            prevCriticalRef.current = state.statistics.critical_alerts;
+        }
+    }, [state.statistics]);
+
     return {
         ...state,
         alerts: Array.isArray(state.alerts) ? state.alerts : [],
@@ -256,6 +314,7 @@ export const useAlerts = (initialFilters: AlertFilters = {}): UseAlertsReturn =>
         acknowledgeAlert,
         bulkAcknowledgeAlerts,
         generateLowStockAlerts,
+        generateExpiryAlerts,
         cleanupAlerts,
         refresh,
     };

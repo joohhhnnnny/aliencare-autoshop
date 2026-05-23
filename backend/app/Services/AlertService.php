@@ -9,6 +9,7 @@ use App\Contracts\Repositories\InventoryRepositoryInterface;
 use App\Contracts\Services\AlertServiceInterface;
 use App\Exceptions\AlertNotFoundException;
 use App\Models\Alert;
+use App\Models\Inventory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 /**
@@ -83,15 +84,52 @@ class AlertService implements AlertServiceInterface
     /**
      * {@inheritDoc}
      */
+    public function handleSingleItemLowStock(Inventory $item): Alert
+    {
+        $existingAlert = $this->alertRepository->findExistingLowStockAlert($item->item_id);
+
+        $urgency = $this->determineUrgency($item);
+        $alertType = $item->stock === 0 ? 'out_of_stock' : 'low_stock';
+        $message = $this->generateAlertMessage($item);
+
+        if ($existingAlert) {
+            return $this->alertRepository->update($existingAlert->id, [
+                'current_stock' => $item->stock,
+                'urgency' => $urgency,
+                'message' => $message,
+            ]);
+        }
+
+        return $this->alertRepository->create([
+            'item_id' => $item->item_id,
+            'item_name' => $item->item_name,
+            'current_stock' => $item->stock,
+            'reorder_level' => $item->reorder_level,
+            'category' => $item->category,
+            'supplier' => $item->supplier,
+            'urgency' => $urgency,
+            'alert_type' => $alertType,
+            'message' => $message,
+            'acknowledged' => false,
+        ]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getAlertStatistics(): array
     {
         $stats = $this->alertRepository->getStatistics();
         $recentAlerts = $this->alertRepository->getUnacknowledged()->take(5);
 
         return [
-            'total_unacknowledged' => $stats['unacknowledged_alerts'],
-            'by_urgency' => $stats['alerts_by_urgency'],
-            'by_type' => $stats['alerts_by_type'],
+            'total_alerts' => $stats['total_alerts'],
+            'unacknowledged_alerts' => $stats['unacknowledged_alerts'],
+            'acknowledged_alerts' => $stats['acknowledged_alerts'],
+            'critical_alerts' => $stats['critical_alerts'],
+            'high_priority_alerts' => $stats['high_priority_alerts'],
+            'alerts_by_urgency' => $stats['alerts_by_urgency'],
+            'alerts_by_type' => $stats['alerts_by_type'],
             'recent_alerts' => $recentAlerts,
         ];
     }
@@ -156,6 +194,67 @@ class AlertService implements AlertServiceInterface
             'deleted_count' => $deletedCount,
             'message' => "Deleted {$deletedCount} alert(s) older than {$daysOld} days",
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function generateExpiryAlerts(): array
+    {
+        $expiringDays = (int) config('inventory.expiring_soon_days', 3);
+        $expiringItems = $this->inventoryRepository->getExpiringSoonItems($expiringDays);
+        $created = 0;
+        $updated = 0;
+        $alerts = collect();
+
+        foreach ($expiringItems as $item) {
+            $existingAlert = $this->alertRepository->findExistingExpiryAlert($item->item_id);
+
+            $daysLeft = now()->startOfDay()->diffInDays($item->expiry_date->startOfDay(), false);
+            $urgency = $daysLeft <= 1 ? 'high' : 'medium';
+            $message = sprintf(
+                '%s is expiring in %d day%s (expiry: %s)',
+                $item->item_name,
+                max($daysLeft, 0),
+                $daysLeft === 1 ? '' : 's',
+                $item->expiry_date->format('Y-m-d')
+            );
+
+            if ($existingAlert) {
+                $this->alertRepository->update($existingAlert->id, [
+                    'current_stock' => $item->stock,
+                    'urgency' => $urgency,
+                    'message' => $message,
+                ]);
+                $alerts->push($existingAlert->fresh());
+                $updated++;
+            } else {
+                $alert = $this->alertRepository->create([
+                    'item_id' => $item->item_id,
+                    'item_name' => $item->item_name,
+                    'current_stock' => $item->stock,
+                    'reorder_level' => $item->reorder_level,
+                    'category' => $item->category,
+                    'supplier' => $item->supplier,
+                    'urgency' => $urgency,
+                    'alert_type' => 'expiry',
+                    'message' => $message,
+                    'acknowledged' => false,
+                ]);
+                $alerts->push($alert);
+                $created++;
+            }
+        }
+
+        return compact('created', 'updated', 'alerts');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getAlertTrends(int $days = 30): \Illuminate\Support\Collection
+    {
+        return $this->alertRepository->getAlertTrends($days);
     }
 
     /**

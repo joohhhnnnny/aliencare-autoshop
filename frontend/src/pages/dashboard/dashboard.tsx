@@ -32,10 +32,9 @@ export default function Dashboard() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-5">
-                <div className="flex min-h-0 w-full flex-1 flex-col gap-5 overflow-y-auto pr-1">
-                    <div className="profile-card relative overflow-hidden rounded-2xl p-6">
-                        <div className="absolute top-0 right-0 h-full w-56 bg-linear-to-l from-[#d4af37]/15 to-transparent" />
+            <div className="flex min-h-0 flex-1 flex-col p-5">
+                <div className="profile-card relative rounded-2xl p-6 mb-5">
+                        <div className="absolute top-0 right-0 h-full w-56 bg-linear-to-l from-[#d4af37]/15 to-transparent rounded-r-2xl" />
                         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <p className="text-xs font-semibold tracking-[0.18em] text-[#d4af37] uppercase">Frontdesk Dashboard</p>
@@ -61,6 +60,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    <div className="flex min-h-0 w-full flex-1 flex-col gap-5 overflow-y-auto pr-1">
                     {analyticsError && (
                         <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-400">{analyticsError}</div>
                     )}

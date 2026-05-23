@@ -161,6 +161,56 @@ class AlertController extends Controller
     }
 
     /**
+     * Get alert trends data for chart display.
+     */
+    public function trends(Request $request): JsonResponse
+    {
+        $this->authorizeManageInventory();
+
+        try {
+            $days = (int) $request->get('days', 30);
+            $trends = $this->alertService->getAlertTrends($days);
+
+            return response()->json([
+                'success' => true,
+                'data' => $trends,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch alert trends: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate expiry alerts for items expiring soon.
+     */
+    public function generateExpiryAlerts(): JsonResponse
+    {
+        $this->authorizeManageInventory();
+
+        try {
+            $result = $this->alertService->generateExpiryAlerts();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'alerts_created' => $result['created'],
+                    'alerts_updated' => $result['updated'],
+                    'total_alerts' => $result['alerts']->count(),
+                ],
+                'message' => "Generated {$result['created']} expiry alerts, updated {$result['updated']}",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate expiry alerts: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Cleanup old acknowledged alerts.
      */
     public function cleanup(Request $request): JsonResponse

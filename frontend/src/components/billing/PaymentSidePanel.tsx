@@ -258,7 +258,7 @@ export default function PaymentSidePanel({ open, onOpenChange, ticket, transacti
         try {
             setIsPrinting(true);
             const response = await billingService.getReceiptDetail(paymentSuccess.transactionId);
-            const printData = mapCustomerBillingReceiptToPrintData(response.data);
+            const printData = mapCustomerBillingReceiptToPrintData(response.data, true);
             pw.document.close();
             pw.document.open();
             pw.document.write(buildReceiptHtml(printData));

@@ -69,7 +69,7 @@ export default function StartServiceModal({ open, onClose, onStarted, onSubmit, 
         } finally {
             setIsLoading(false);
         }
-    }, [schedulingParams]);
+    }, [schedulingParams, hasSchedulingContext]);
 
     useEffect(() => {
         if (!open) return;

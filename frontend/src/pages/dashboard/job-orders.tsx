@@ -13,7 +13,7 @@ import {
     getQueueSortKey,
     getSourceLabel,
     hasSchedule,
-    isApprovalNeeded,
+    isBookingUnattended,
     isPaidInFull,
     isPendingBilling,
 } from '@/lib/jobOrderFormatters';
@@ -244,11 +244,15 @@ export default function JobOrders() {
     const queueOrders = useMemo(
         () =>
             activeOrders
-                .filter((o) => o.status !== 'completed' && isCurrentSlot(o))
-                .filter(hasSchedule)
+                .filter((o) => o.status !== 'completed')
+                .filter((o) => hasSchedule(o) && (o.arrival_date === todayYmd || isBookingUnattended(o)))
                 .filter(searchFilter)
-                .sort((a, b) => getQueueSortKey(a).localeCompare(getQueueSortKey(b))),
-        [activeOrders, searchFilter, isCurrentSlot],
+                .sort((a, b) => {
+                    const aCurrent = isCurrentSlot(a) ? '0' : '1';
+                    const bCurrent = isCurrentSlot(b) ? '0' : '1';
+                    return `${aCurrent}-${getQueueSortKey(a)}`.localeCompare(`${bCurrent}-${getQueueSortKey(b)}`);
+                }),
+        [activeOrders, searchFilter, isCurrentSlot, todayYmd],
     );
 
     const isOnline = (o: JobOrder) => getSourceLabel(o) === 'Online Booking';

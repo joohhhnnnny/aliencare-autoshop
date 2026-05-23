@@ -174,4 +174,17 @@ class InventoryRepository extends BaseRepository implements InventoryRepositoryI
             ->where('stock', 0)
             ->count();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getExpiringSoonItems(int $days): Collection
+    {
+        return $this->model
+            ->where('status', 'active')
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '>=', now()->toDateString())
+            ->where('expiry_date', '<=', now()->addDays($days)->toDateString())
+            ->get();
+    }
 }

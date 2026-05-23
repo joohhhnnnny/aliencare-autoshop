@@ -6,7 +6,7 @@ import { StockAlerts } from '@/components/inventory/StockAlerts';
 import { UsageReports } from '@/components/inventory/UsageReports';
 import AppLayout from '@/components/layout/app-layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAlerts } from '@/hooks/useAlerts';
+import { AlertProvider, useAlertContext } from '@/contexts/AlertContext';
 import { type BreadcrumbItem } from '@/types';
 import { AlertTriangle, BookOpen, FileText, LayoutDashboard, Package, Shield } from 'lucide-react';
 import { useState } from 'react';
@@ -23,19 +23,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Inventory() {
-    const { alerts } = useAlerts();
+    return (
+        <AlertProvider>
+            <InventoryContent />
+        </AlertProvider>
+    );
+}
+
+function InventoryContent() {
+    const { statistics } = useAlertContext();
     const [activeTab, setActiveTab] = useState('dashboard');
 
-    const safeAlerts = Array.isArray(alerts) ? alerts : [];
-    const unacknowledgedAlerts = safeAlerts.filter((alert) => !alert.acknowledged).length;
+    const unacknowledgedAlerts = statistics?.unacknowledged_alerts ?? 0;
     const hasUnacknowledgedAlerts = unacknowledgedAlerts > 0;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-5">
-                <div className="flex min-h-0 w-full flex-1 flex-col gap-5 overflow-y-auto pr-1">
-                    <div className="profile-card relative overflow-hidden rounded-2xl p-6">
-                        <div className="absolute top-0 right-0 h-full w-64 bg-linear-to-l from-[#d4af37]/15 to-transparent" />
+            <div className="flex min-h-0 flex-1 flex-col p-5">
+                <div className="profile-card relative rounded-2xl p-6 mb-5">
+                        <div className="absolute top-0 right-0 h-full w-64 bg-linear-to-l from-[#d4af37]/15 to-transparent rounded-r-2xl" />
                         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <p className="text-xs font-semibold tracking-[0.18em] text-[#d4af37] uppercase">Frontdesk Workspace</p>
@@ -72,6 +78,7 @@ export default function Inventory() {
                         </div>
                     </div>
 
+                    <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto pr-1">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                         <div className="profile-card rounded-xl p-1.5">
                             <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-lg bg-[#0d0d10] p-1">

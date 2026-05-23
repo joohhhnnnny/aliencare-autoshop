@@ -1,5 +1,6 @@
 import { AlertTriangle, ArrowDownCircle, CheckCircle, Edit, Loader2, Package, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useAlertContext } from '../../contexts/AlertContext';
 import { useToast } from '../ui/toast';
 import { useInventoryItems } from '../../hooks/useInventory';
 import { InventoryItem } from '../../types/inventory';
@@ -47,6 +48,7 @@ export function InventoryTable() {
         unit_price: '',
         supplier: '',
         location: '',
+        expiry_date: '',
     });
 
     // Use real API data
@@ -106,6 +108,14 @@ export function InventoryTable() {
         return () => clearTimeout(timer);
     }, [searchTerm, categoryFilter, stockFilter, updateFilters]);
 
+    const { success, error: toastError } = useToast();
+    const { alerts: alertContextAlerts } = useAlertContext();
+
+    const alertedItemIds = useMemo(() => {
+        if (!Array.isArray(alertContextAlerts)) return new Set<number>();
+        return new Set(alertContextAlerts.filter((a) => !a.acknowledged).map((a) => a.item_id));
+    }, [alertContextAlerts]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -123,8 +133,6 @@ export function InventoryTable() {
             </Alert>
         );
     }
-
-    const { success, error: toastError } = useToast();
 
     const handleAddStock = async () => {
         setAddStockError(null);
@@ -291,6 +299,7 @@ export function InventoryTable() {
                 unit_price: unitPrice,
                 supplier: newItem.supplier,
                 location: newItem.location,
+                expiry_date: newItem.expiry_date || undefined,
             };
 
             const result = await createItem(itemData);
@@ -305,6 +314,7 @@ export function InventoryTable() {
                     unit_price: '',
                     supplier: '',
                     location: '',
+                    expiry_date: '',
                 });
 
                 setIsAddItemDialogOpen(false);
@@ -360,6 +370,7 @@ export function InventoryTable() {
                 unit_price: editingItem.unit_price,
                 supplier: editingItem.supplier,
                 location: editingItem.location,
+                expiry_date: editingItem.expiry_date || undefined,
             };
 
             const result = await updateItem(editingItem.item_id, updateData);
@@ -570,6 +581,18 @@ export function InventoryTable() {
                                         value={newItem.location}
                                         onChange={(e) => setNewItem((prev) => ({ ...prev, location: e.target.value }))}
                                         placeholder="Enter storage location"
+                                        className="border-border bg-input text-foreground"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="expiry_date" className="text-foreground">
+                                        Expiry Date <span className="text-muted-foreground">(optional)</span>
+                                    </Label>
+                                    <Input
+                                        id="expiry_date"
+                                        type="date"
+                                        value={newItem.expiry_date}
+                                        onChange={(e) => setNewItem((prev) => ({ ...prev, expiry_date: e.target.value }))}
                                         className="border-border bg-input text-foreground"
                                     />
                                 </div>
@@ -900,6 +923,18 @@ export function InventoryTable() {
                                             className="border-border bg-input text-foreground"
                                         />
                                     </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="edit-expiry_date" className="text-foreground">
+                                            Expiry Date <span className="text-muted-foreground">(optional)</span>
+                                        </Label>
+                                        <Input
+                                            id="edit-expiry_date"
+                                            type="date"
+                                            value={editingItem.expiry_date || ''}
+                                            onChange={(e) => setEditingItem((prev) => (prev ? { ...prev, expiry_date: e.target.value } : null))}
+                                            className="border-border bg-input text-foreground"
+                                        />
+                                    </div>
                                     {updateItemError && (
                                         <div className="col-span-2">
                                             <Alert variant="destructive">
@@ -1002,7 +1037,14 @@ export function InventoryTable() {
                             {filteredParts.map((part) => (
                                 <TableRow key={part.id} className="border-border hover:bg-muted/50">
                                     <TableCell className="font-medium text-foreground">{part.item_id}</TableCell>
-                                    <TableCell className="text-foreground">{part.item_name}</TableCell>
+                                    <TableCell className="text-foreground">
+                                        <div className="flex items-center gap-1.5">
+                                            {alertedItemIds.has(part.item_id) && (
+                                                <span title="Has active alert"><AlertTriangle className="h-3.5 w-3.5 shrink-0 text-destructive" /></span>
+                                            )}
+                                            {part.item_name}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant="outline">{part.category}</Badge>
                                     </TableCell>
