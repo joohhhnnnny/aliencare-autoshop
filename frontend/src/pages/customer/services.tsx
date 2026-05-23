@@ -1,4 +1,5 @@
 import CustomerLayout from '@/components/layout/customer-layout';
+import { useToast } from '@/components/ui/toast';
 import { useCustomerProfile } from '@/hooks/useCustomerProfile';
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { ApiError } from '@/services/api';
@@ -53,6 +54,13 @@ function formatDateYmd(date: Date): string {
     return `${y}-${m}-${d}`;
 }
 
+function getMinimumBookingDate(): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    return d;
+}
+
 function fmtTime(d: Date) {
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
@@ -76,11 +84,7 @@ function CalendarDropdown({
         return d;
     });
 
-    const today = useMemo(() => {
-        const d = new Date();
-        d.setHours(0, 0, 0, 0);
-        return d;
-    }, []);
+    const minDate = useMemo(() => getMinimumBookingDate(), []);
 
     const days = useMemo(() => {
         const year = viewMonth.getFullYear();
@@ -161,21 +165,18 @@ function CalendarDropdown({
             <div className="grid grid-cols-7 gap-y-0.5">
                 {days.map((day, i) => {
                     if (!day) return <div key={`empty-${i}`} />;
-                    const isPast = day < today;
+                    const isUnavailable = day < minDate;
                     const isSelected = day.toDateString() === selectedDate.toDateString();
-                    const isToday = day.toDateString() === today.toDateString();
                     return (
                         <button
                             key={day.toISOString()}
-                            disabled={isPast}
+                            disabled={isUnavailable}
                             onClick={() => onSelectDate(day)}
                             className={[
                                 'mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors',
                                 isSelected
                                     ? 'bg-[#d4af37] font-bold text-black shadow-[0_0_8px_rgba(212,175,55,0.5)]'
-                                    : isToday
-                                      ? 'border border-[#d4af37] text-[#d4af37]'
-                                      : isPast
+                                    : isUnavailable
                                         ? 'cursor-not-allowed text-muted-foreground/30'
                                         : 'text-foreground hover:bg-muted hover:text-foreground',
                             ].join(' ')}
@@ -190,13 +191,12 @@ function CalendarDropdown({
             <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5">
                 <button
                     onClick={() => {
-                        const d = new Date();
-                        d.setHours(0, 0, 0, 0);
+                        const d = getMinimumBookingDate();
                         onSelectDate(d);
                     }}
                     className="rounded-md px-2 py-1 text-xs font-medium text-[#d4af37] transition-colors hover:bg-[#d4af37]/10"
                 >
-                    Today
+                    Tomorrow
                 </button>
                 <button
                     onClick={onClose}
@@ -220,6 +220,7 @@ const SLOT_POLL_INTERVAL_MS = 8000;
 
 export default function CustomerServices() {
     const navigate = useNavigate();
+    const { success } = useToast();
     const [activeCategory, setActiveCategory] = useState<Category>('Maintenance');
     const [selectedId, setSelectedId] = useState(2);
     const [modalStep, setModalStep] = useState<ModalStep>(null);
@@ -228,11 +229,7 @@ export default function CustomerServices() {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [otpCountdown, setOtpCountdown] = useState(0);
     const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-    const [selectedDate, setSelectedDate] = useState<Date>(() => {
-        const d = new Date();
-        d.setHours(0, 0, 0, 0);
-        return d;
-    });
+    const [selectedDate, setSelectedDate] = useState<Date>(() => getMinimumBookingDate());
     const [timeSlots, setTimeSlots] = useState<BookingTimeSlot[]>([]);
     const [selectedTimeIdx, setSelectedTimeIdx] = useState(0);
     const [slotsLoading, setSlotsLoading] = useState(false);
@@ -458,6 +455,7 @@ export default function CustomerServices() {
             const response = await customerService.verifyBookingOtp(confirmedJO.id, code);
             setConfirmedJO(response.data.job_order);
             setModalStep('reserved');
+            success('Booking verified. Awaiting shop approval.', 'Booking verified');
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Verification failed. Please try again.';
             setBookingError(msg);
@@ -472,10 +470,9 @@ export default function CustomerServices() {
     const popularServices = services.filter((s) => getCategory(s) === activeCategory);
     const selectedService = services.find((s) => s.id === effectiveSelectedId) ?? services[0];
 
-    // Build next-6-day chips from today
+    // Build next-6-day chips from tomorrow
     const dateChips = useMemo(() => {
-        const base = new Date();
-        base.setHours(0, 0, 0, 0);
+        const base = getMinimumBookingDate();
         return Array.from({ length: 6 }, (_, i) => {
             const d = new Date(base);
             d.setDate(base.getDate() + i);

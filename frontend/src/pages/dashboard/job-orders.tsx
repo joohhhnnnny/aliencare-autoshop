@@ -20,7 +20,20 @@ import {
 import { jobOrderService } from '@/services/jobOrderService';
 import { type BreadcrumbItem } from '@/types';
 import { type JobOrder } from '@/types/customer';
-import { ClipboardList, CreditCard, Globe, Layers, LayoutDashboard, Loader2, Search, UserRound, UserRoundPlus, Wrench } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    ClipboardList,
+    CreditCard,
+    Globe,
+    Layers,
+    LayoutDashboard,
+    Loader2,
+    Search,
+    UserRound,
+    UserRoundPlus,
+    Wrench,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -34,6 +47,8 @@ interface TabDef {
     icon: React.ReactNode;
 }
 
+type OnlineSectionKey = 'pending' | 'approved';
+
 const TABS: TabDef[] = [
     { key: 'all', label: 'All', icon: <Layers className="h-3.5 w-3.5" /> },
     { key: 'queue', label: 'Active Queue', icon: <LayoutDashboard className="h-3.5 w-3.5" /> },
@@ -43,6 +58,70 @@ const TABS: TabDef[] = [
     { key: 'billing', label: 'Billing', icon: <CreditCard className="h-3.5 w-3.5" /> },
     { key: 'paid', label: 'Paid', icon: <ClipboardList className="h-3.5 w-3.5" /> },
 ];
+
+const ONLINE_TAB_LAST_SEEN_KEY = 'aliencare.jobOrders.onlineLastSeenAt';
+const ASSIGNMENTS_TAB_LAST_SEEN_KEY = 'aliencare.jobOrders.assignmentsLastSeenAt';
+
+function readLastSeenAt(key: string): number | null {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null;
+    const raw = window.sessionStorage.getItem(key);
+    const parsed = raw ? Number(raw) : Number.NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function writeLastSeenAt(key: string, value: number): void {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    window.sessionStorage.setItem(key, String(value));
+}
+
+function getOrderActivityTimestamp(order: JobOrder): number {
+    const candidate = order.updated_at || order.created_at;
+    const ts = Date.parse(candidate);
+    return Number.isNaN(ts) ? 0 : ts;
+}
+
+function getNewestActivityTimestamp(orders: JobOrder[]): number | null {
+    let newest = 0;
+    for (const order of orders) {
+        const ts = getOrderActivityTimestamp(order);
+        if (ts > newest) {
+            newest = ts;
+        }
+    }
+    return newest > 0 ? newest : null;
+}
+
+function OnlineSectionControls({
+    section,
+    onPrevious,
+    onNext,
+}: {
+    section: OnlineSectionKey;
+    onPrevious: () => void;
+    onNext: () => void;
+}) {
+    return (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full border border-[#2a2a2e] bg-[#0d0d10] px-3 py-1.5 font-medium text-foreground">
+                {section === 'pending' ? 'Needs Approval' : 'Approved'}
+            </span>
+            <button
+                onClick={onPrevious}
+                disabled={section === 'pending'}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#2a2a2e] px-2.5 py-1.5 transition-colors hover:border-[#d4af37]/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+                <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <button
+                onClick={onNext}
+                disabled={section === 'approved'}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#2a2a2e] px-2.5 py-1.5 transition-colors hover:border-[#d4af37]/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+            >
+                <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+        </div>
+    );
+}
 
 export default function JobOrders() {
     const { success, error: toastError } = useToast();
@@ -55,14 +134,27 @@ export default function JobOrders() {
     const [searchValue, setSearchValue] = useState('');
     const [activeTab, setActiveTab] = useState<TabKey>('queue');
     const [selectedId, setSelectedId] = useState<number>(0);
+    const [onlineLastSeenAt, setOnlineLastSeenAt] = useState<number | null>(() => readLastSeenAt(ONLINE_TAB_LAST_SEEN_KEY));
+    const [assignmentsLastSeenAt, setAssignmentsLastSeenAt] = useState<number | null>(() => readLastSeenAt(ASSIGNMENTS_TAB_LAST_SEEN_KEY));
 
     const [showWalkInModal, setShowWalkInModal] = useState(false);
     const [walkInInitialCustomerId, setWalkInInitialCustomerId] = useState<number | null>(null);
     const [showStartModal, setShowStartModal] = useState(false);
     const [showDraftModal, setShowDraftModal] = useState(false);
+    const [onlineSection, setOnlineSection] = useState<OnlineSectionKey>('pending');
 
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+
+    const updateOnlineLastSeenAt = useCallback((value: number) => {
+        setOnlineLastSeenAt(value);
+        writeLastSeenAt(ONLINE_TAB_LAST_SEEN_KEY, value);
+    }, []);
+
+    const updateAssignmentsLastSeenAt = useCallback((value: number) => {
+        setAssignmentsLastSeenAt(value);
+        writeLastSeenAt(ASSIGNMENTS_TAB_LAST_SEEN_KEY, value);
+    }, []);
 
     // Auto-open walk-in modal when navigated from customers page
     useEffect(() => {
@@ -110,8 +202,6 @@ export default function JobOrders() {
 
     // ── Derived data ──────────────────────────────────────────────────────
     const activeOrders = useMemo(() => jobOrders.filter((o) => o.status !== 'settled' && o.status !== 'cancelled'), [jobOrders]);
-
-    const onlinePendingCount = useMemo(() => jobOrders.filter((o) => isApprovalNeeded(o)).length, [jobOrders]);
 
     const todayYmd = useMemo(() => new Date().toISOString().split('T')[0], []);
     const currentHourSlot = useMemo(() => {
@@ -168,9 +258,25 @@ export default function JobOrders() {
         [jobOrders, searchFilter],
     );
 
+    const onlineOrdersRaw = useMemo(() => jobOrders.filter((o) => isOnline(o)), [jobOrders]);
+
+    const onlineNewestAt = useMemo(() => getNewestActivityTimestamp(onlineOrdersRaw), [onlineOrdersRaw]);
+
+    const onlineUnreadCount = useMemo(() => {
+        if (onlineOrdersRaw.length === 0) return 0;
+        if (!onlineLastSeenAt) return onlineOrdersRaw.length;
+        return onlineOrdersRaw.filter((order) => getOrderActivityTimestamp(order) > onlineLastSeenAt).length;
+    }, [onlineLastSeenAt, onlineOrdersRaw]);
+
     const onlinePendingApproval = useMemo(() => onlineOrders.filter((o) => o.status === 'pending_approval'), [onlineOrders]);
 
     const onlineApproved = useMemo(() => onlineOrders.filter((o) => o.status !== 'pending_approval'), [onlineOrders]);
+
+    useEffect(() => {
+        if (onlineSection === 'approved' && onlineApproved.length === 0) {
+            setOnlineSection('pending');
+        }
+    }, [onlineApproved.length, onlineSection]);
 
     const walkInOrders = useMemo(
         () =>
@@ -188,6 +294,32 @@ export default function JobOrders() {
                 .sort(compareNewestScheduleFirst),
         [jobOrders, searchFilter],
     );
+
+    const unassignedOrdersRaw = useMemo(() => jobOrders.filter((o) => o.status === 'approved'), [jobOrders]);
+
+    const assignmentsNewestAt = useMemo(() => getNewestActivityTimestamp(unassignedOrdersRaw), [unassignedOrdersRaw]);
+
+    const assignmentsUnreadCount = useMemo(() => {
+        if (unassignedOrdersRaw.length === 0) return 0;
+        if (!assignmentsLastSeenAt) return unassignedOrdersRaw.length;
+        return unassignedOrdersRaw.filter((order) => getOrderActivityTimestamp(order) > assignmentsLastSeenAt).length;
+    }, [assignmentsLastSeenAt, unassignedOrdersRaw]);
+
+    useEffect(() => {
+        if (activeTab !== 'online') return;
+        const nextSeenAt = onlineNewestAt ?? Date.now();
+        if (onlineLastSeenAt === null || nextSeenAt > onlineLastSeenAt) {
+            updateOnlineLastSeenAt(nextSeenAt);
+        }
+    }, [activeTab, onlineLastSeenAt, onlineNewestAt, updateOnlineLastSeenAt]);
+
+    useEffect(() => {
+        if (activeTab !== 'assignments') return;
+        const nextSeenAt = assignmentsNewestAt ?? Date.now();
+        if (assignmentsLastSeenAt === null || nextSeenAt > assignmentsLastSeenAt) {
+            updateAssignmentsLastSeenAt(nextSeenAt);
+        }
+    }, [activeTab, assignmentsLastSeenAt, assignmentsNewestAt, updateAssignmentsLastSeenAt]);
 
     const billingOrders = useMemo(
         () => jobOrders.filter(hasSchedule).filter((o) => isPendingBilling(o) && searchFilter(o)),
@@ -213,7 +345,7 @@ export default function JobOrders() {
         if (activeTab === 'billing') return billingOrders;
         if (activeTab === 'paid') return paidOrders;
         return [];
-    }, [activeTab, allOrders, queueOrders, onlineApproved, walkInOrders, unassignedOrders, billingOrders, paidOrders]);
+    }, [activeTab, allOrders, queueOrders, onlineOrders, walkInOrders, unassignedOrders, billingOrders, paidOrders]);
 
     // ── Selection management ──────────────────────────────────────────────
     useEffect(() => {
@@ -439,9 +571,14 @@ export default function JobOrders() {
                                     >
                                         {tab.icon}
                                         {tab.label}
-                                        {tab.key === 'online' && onlinePendingCount > 0 && (
+                                        {tab.key === 'online' && onlineUnreadCount > 0 && (
                                             <span className="ml-0.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">
-                                                {onlinePendingCount}
+                                                {onlineUnreadCount}
+                                            </span>
+                                        )}
+                                        {tab.key === 'assignments' && assignmentsUnreadCount > 0 && (
+                                            <span className="ml-0.5 rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-bold text-sky-300">
+                                                {assignmentsUnreadCount}
                                             </span>
                                         )}
                                     </button>
@@ -454,13 +591,15 @@ export default function JobOrders() {
                                     <Loader2 className="h-4 w-4 animate-spin" /> Loading job orders...
                                 </div>
                             ) : (
-                                <div className="min-h-0 flex-1 overflow-hidden">
+                                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                                     {/* All */}
                                     {activeTab === 'all' &&
                                         (allOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No job orders found.</div>
                                         ) : (
-                                            <JobOrderTable orders={allOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable orders={allOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            </div>
                                         ))}
 
                                     {/* Active Queue */}
@@ -468,7 +607,9 @@ export default function JobOrders() {
                                         (queueOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No active job orders.</div>
                                         ) : (
-                                            <JobOrderTable orders={queueOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable orders={queueOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            </div>
                                         ))}
 
                                     {/* Online Booking */}
@@ -476,44 +617,51 @@ export default function JobOrders() {
                                         (onlineOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No online bookings.</div>
                                         ) : (
-                                            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-                                                {/* Needs Approval section — at the top */}
-                                                {onlinePendingApproval.length > 0 && (
-                                                    <div>
-                                                        <div className="mb-2 flex items-center gap-2">
-                                                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-                                                                Needs Approval ({onlinePendingApproval.length})
-                                                            </span>
-                                                        </div>
-                                                        <ApprovalQueue
-                                                            orders={onlinePendingApproval}
-                                                            selectedId={onlinePendingApproval.some((o) => o.id === selectedId) ? selectedId : 0}
-                                                            onSelect={setSelectedId}
-                                                            onApprove={handleApproveOrder}
-                                                            onReject={handleRejectOrder}
-                                                            isProcessing={isProcessingAction}
+                                            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                                                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#2a2a2e] bg-[#0b0b0d]">
+                                                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#2a2a2e] px-4 py-3">
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                                                onlineSection === 'pending'
+                                                                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                                                                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                                                            }`}
+                                                        >
+                                                            {onlineSection === 'pending'
+                                                                ? `Needs Approval (${onlinePendingApproval.length})`
+                                                                : `Approved (${onlineApproved.length})`}
+                                                        </span>
+                                                        <OnlineSectionControls
+                                                            section={onlineSection}
+                                                            onPrevious={() => setOnlineSection('pending')}
+                                                            onNext={() => setOnlineSection('approved')}
                                                         />
                                                     </div>
-                                                )}
-
-                                                {/* Approved online bookings */}
-                                                {onlineApproved.length > 0 && (
-                                                    <div>
-                                                        {onlinePendingApproval.length > 0 && (
-                                                            <div className="mb-2 flex items-center gap-2">
-                                                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
-                                                                    Approved ({onlineApproved.length})
-                                                                </span>
+                                                    <div className="min-h-0 flex-1 overflow-hidden">
+                                                        {onlineSection === 'pending' ? (
+                                                            onlinePendingApproval.length > 0 ? (
+                                                                <ApprovalQueue
+                                                                    orders={onlinePendingApproval}
+                                                                    selectedId={onlinePendingApproval.some((o) => o.id === selectedId) ? selectedId : 0}
+                                                                    onSelect={setSelectedId}
+                                                                    onApprove={handleApproveOrder}
+                                                                    onReject={handleRejectOrder}
+                                                                    isProcessing={isProcessingAction}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex h-full items-center justify-center px-5 py-16 text-center text-sm text-muted-foreground">
+                                                                    No online bookings waiting for approval.
+                                                                </div>
+                                                            )
+                                                        ) : onlineApproved.length > 0 ? (
+                                                            <JobOrderTable orders={onlineApproved} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                                        ) : (
+                                                            <div className="flex h-full items-center justify-center px-5 py-16 text-center text-sm text-muted-foreground">
+                                                                No approved online bookings.
                                                             </div>
                                                         )}
-                                                        <JobOrderTable
-                                                            orders={onlineApproved}
-                                                            selectedId={selectedId}
-                                                            onSelect={setSelectedId}
-                                                            variant="queue"
-                                                        />
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
                                         ))}
 
@@ -522,7 +670,9 @@ export default function JobOrders() {
                                         (walkInOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No walk-in job orders.</div>
                                         ) : (
-                                            <JobOrderTable orders={walkInOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable orders={walkInOrders} selectedId={selectedId} onSelect={setSelectedId} variant="queue" />
+                                            </div>
                                         ))}
 
                                     {/* Assignments */}
@@ -532,12 +682,14 @@ export default function JobOrders() {
                                                 No approved job orders waiting for assignment.
                                             </div>
                                         ) : (
-                                            <JobOrderTable
-                                                orders={unassignedOrders}
-                                                selectedId={selectedId}
-                                                onSelect={setSelectedId}
-                                                variant="queue"
-                                            />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable
+                                                    orders={unassignedOrders}
+                                                    selectedId={selectedId}
+                                                    onSelect={setSelectedId}
+                                                    variant="queue"
+                                                />
+                                            </div>
                                         ))}
 
                                     {/* Billing */}
@@ -545,15 +697,17 @@ export default function JobOrders() {
                                         (billingOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No pending billing.</div>
                                         ) : (
-                                            <JobOrderTable
-                                                orders={billingOrders}
-                                                selectedId={selectedId}
-                                                onSelect={(id) => {
-                                                    setSelectedId(id);
-                                                    navigate(`/billing?job_order_id=${id}`);
-                                                }}
-                                                variant="billing"
-                                            />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable
+                                                    orders={billingOrders}
+                                                    selectedId={selectedId}
+                                                    onSelect={(id) => {
+                                                        setSelectedId(id);
+                                                        navigate(`/billing?job_order_id=${id}`);
+                                                    }}
+                                                    variant="billing"
+                                                />
+                                            </div>
                                         ))}
 
                                     {/* Paid */}
@@ -561,7 +715,9 @@ export default function JobOrders() {
                                         (paidOrders.length === 0 ? (
                                             <div className="px-5 py-16 text-center text-sm text-muted-foreground">No settled job orders.</div>
                                         ) : (
-                                            <JobOrderTable orders={paidOrders} selectedId={selectedId} onSelect={setSelectedId} variant="paid" />
+                                            <div className="min-h-0 flex-1 overflow-hidden">
+                                                <JobOrderTable orders={paidOrders} selectedId={selectedId} onSelect={setSelectedId} variant="paid" />
+                                            </div>
                                         ))}
                                 </div>
                             )}

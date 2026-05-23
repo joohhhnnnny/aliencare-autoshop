@@ -154,38 +154,42 @@ class CustomerBookingController extends Controller
         $validated = $request->validated();
 
         try {
-            $jobOrder = $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
-                return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
-                    $slotSetting = BookingSlot::query()
-                        ->active()
-                        ->where('time', $arrivalTime)
-                        ->lockForUpdate()
-                        ->first();
+            $jobOrder = $this->withCustomerBookingLock($customer->id, $arrivalDate, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
+                return $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
+                    return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated) {
+                        $slotSetting = BookingSlot::query()
+                            ->active()
+                            ->where('time', $arrivalTime)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if (! $slotSetting) {
-                        throw new HttpException(422, 'Selected arrival slot is unavailable.');
-                    }
+                        if (! $slotSetting) {
+                            throw new HttpException(422, 'Selected arrival slot is unavailable.');
+                        }
 
-                    if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
-                        throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
-                    }
+                        if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
+                            throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
+                        }
 
-                    $bookingPayload = $this->withReservationHoldExpiry($validated, false);
+                        $this->ensureNoDuplicateSameDayBooking($customer, (int) $validated['vehicle_id'], (int) $validated['service_id'], $arrivalDate);
 
-                    $jobOrder = $this->createPendingJobOrder($customer, $service, $bookingPayload, true)
-                        ->fresh(['customer', 'vehicle', 'service', 'items']);
+                        $bookingPayload = $this->withReservationHoldExpiry($validated, false);
 
-                    // Create a pending transaction for the full service fee so it
-                    // shows up in the customer's Billing & Payment section.
-                    CustomerTransaction::create([
-                        'customer_id' => $customer->id,
-                        'job_order_id' => $jobOrder->id,
-                        'type' => CustomerTransactionType::Invoice,
-                        'amount' => $service->price_fixed,
-                        'notes' => 'Service fee for '.$jobOrder->jo_number.' (pay at shop)',
-                    ]);
+                        $jobOrder = $this->createPendingJobOrder($customer, $service, $bookingPayload, false)
+                            ->fresh(['customer', 'vehicle', 'service', 'items']);
 
-                    return $jobOrder;
+                        // Create a pending transaction for the full service fee so it
+                        // shows up in the customer's Billing & Payment section.
+                        CustomerTransaction::create([
+                            'customer_id' => $customer->id,
+                            'job_order_id' => $jobOrder->id,
+                            'type' => CustomerTransactionType::Invoice,
+                            'amount' => $service->price_fixed,
+                            'notes' => 'Service fee for '.$jobOrder->jo_number.' (pay at shop)',
+                        ]);
+
+                        return $jobOrder;
+                    });
                 });
             });
 
@@ -267,92 +271,96 @@ class CustomerBookingController extends Controller
         $reservationFeeAmount = (float) config('inventory.booking_reservation_fee_amount', 200);
 
         try {
-            $result = $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
-                return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
-                    $slotSetting = BookingSlot::query()
-                        ->active()
-                        ->where('time', $arrivalTime)
-                        ->lockForUpdate()
-                        ->first();
+            $result = $this->withCustomerBookingLock($customer->id, $arrivalDate, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
+                return $this->withSlotBookingLock($arrivalDate, $arrivalTime, function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
+                    return DB::transaction(function () use ($arrivalDate, $arrivalTime, $customer, $service, $validated, $reservationFeeAmount, $xenditService) {
+                        $slotSetting = BookingSlot::query()
+                            ->active()
+                            ->where('time', $arrivalTime)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if (! $slotSetting) {
-                        throw new HttpException(422, 'Selected arrival slot is unavailable.');
-                    }
-
-                    if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
-                        throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
-                    }
-
-                    $bookingPayload = $this->withReservationHoldExpiry($validated, true);
-
-                    $jobOrder = $this->createPendingJobOrder($customer, $service, $bookingPayload)
-                        ->fresh(['customer', 'vehicle', 'service', 'items']);
-
-                    $isCash = ($validated['payment_method'] ?? '') === 'cash';
-                    $paymentUrl = null;
-                    $otpCode = null;
-
-                    if ($isCash) {
-                        // Cash booking: single invoice for the full service amount.
-                        $transaction = CustomerTransaction::create([
-                            'customer_id' => $customer->id,
-                            'job_order_id' => $jobOrder->id,
-                            'type' => CustomerTransactionType::Invoice,
-                            'amount' => (float) $service->price_fixed,
-                            'notes' => 'Full service fee for '.$jobOrder->jo_number.' (pay at shop)',
-                            'payment_method' => 'cash',
-                        ]);
-
-                        $otpCode = OtpCode::create([
-                            'customer_id' => $customer->id,
-                            'job_order_id' => $jobOrder->id,
-                            'code' => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
-                            'purpose' => 'booking_verification',
-                            'expires_at' => now()->addMinutes(10),
-                        ]);
-
-                        try {
-                            Mail::to($customer->email)->send(new BookingOtpMail($otpCode->code, $jobOrder));
-                        } catch (\Throwable $e) {
-                            Log::warning('Failed to send booking OTP email', [
-                                'email' => $customer->email,
-                                'job_order' => $jobOrder->jo_number,
-                                'error' => $e->getMessage(),
-                            ]);
+                        if (! $slotSetting) {
+                            throw new HttpException(422, 'Selected arrival slot is unavailable.');
                         }
-                    } else {
-                        // Online payment: reservation fee + remaining balance.
-                        $transaction = CustomerTransaction::create([
-                            'customer_id' => $customer->id,
-                            'job_order_id' => $jobOrder->id,
-                            'type' => CustomerTransactionType::Invoice,
-                            'amount' => $reservationFeeAmount,
-                            'notes' => 'Reservation fee for booking '.$jobOrder->jo_number,
-                            'payment_method' => $validated['payment_method'],
-                        ]);
 
-                        $remaining = round((float) $service->price_fixed - $reservationFeeAmount, 2);
+                        if (! $this->slotHasCapacity($arrivalDate, $slotSetting)) {
+                            throw new HttpException(422, 'Selected arrival slot is full. Please choose another time.');
+                        }
 
-                        if ($remaining > 0) {
-                            CustomerTransaction::create([
+                        $this->ensureNoDuplicateSameDayBooking($customer, (int) $validated['vehicle_id'], (int) $validated['service_id'], $arrivalDate);
+
+                        $bookingPayload = $this->withReservationHoldExpiry($validated, true);
+
+                        $jobOrder = $this->createPendingJobOrder($customer, $service, $bookingPayload)
+                            ->fresh(['customer', 'vehicle', 'service', 'items']);
+
+                        $isCash = ($validated['payment_method'] ?? '') === 'cash';
+                        $paymentUrl = null;
+                        $otpCode = null;
+
+                        if ($isCash) {
+                            // Cash booking: single invoice for the full service amount.
+                            $transaction = CustomerTransaction::create([
                                 'customer_id' => $customer->id,
                                 'job_order_id' => $jobOrder->id,
                                 'type' => CustomerTransactionType::Invoice,
-                                'amount' => $remaining,
-                                'notes' => 'Remaining balance for '.$jobOrder->jo_number.' (reservation fee of ₱'.number_format($reservationFeeAmount, 2).' deducted)',
+                                'amount' => (float) $service->price_fixed,
+                                'notes' => 'Full service fee for '.$jobOrder->jo_number.' (pay at shop)',
+                                'payment_method' => 'cash',
                             ]);
+
+                            $otpCode = OtpCode::create([
+                                'customer_id' => $customer->id,
+                                'job_order_id' => $jobOrder->id,
+                                'code' => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+                                'purpose' => 'booking_verification',
+                                'expires_at' => now()->addMinutes(10),
+                            ]);
+
+                            try {
+                                Mail::to($customer->email)->send(new BookingOtpMail($otpCode->code, $jobOrder));
+                            } catch (\Throwable $e) {
+                                Log::warning('Failed to send booking OTP email', [
+                                    'email' => $customer->email,
+                                    'job_order' => $jobOrder->jo_number,
+                                    'error' => $e->getMessage(),
+                                ]);
+                            }
+                        } else {
+                            // Online payment: reservation fee + remaining balance.
+                            $transaction = CustomerTransaction::create([
+                                'customer_id' => $customer->id,
+                                'job_order_id' => $jobOrder->id,
+                                'type' => CustomerTransactionType::Invoice,
+                                'amount' => $reservationFeeAmount,
+                                'notes' => 'Reservation fee for booking '.$jobOrder->jo_number,
+                                'payment_method' => $validated['payment_method'],
+                            ]);
+
+                            $remaining = round((float) $service->price_fixed - $reservationFeeAmount, 2);
+
+                            if ($remaining > 0) {
+                                CustomerTransaction::create([
+                                    'customer_id' => $customer->id,
+                                    'job_order_id' => $jobOrder->id,
+                                    'type' => CustomerTransactionType::Invoice,
+                                    'amount' => $remaining,
+                                    'notes' => 'Remaining balance for '.$jobOrder->jo_number.' (reservation fee of ₱'.number_format($reservationFeeAmount, 2).' deducted)',
+                                ]);
+                            }
+
+                            $paymentUrl = $xenditService->createInvoice($transaction, $customer);
                         }
 
-                        $paymentUrl = $xenditService->createInvoice($transaction, $customer);
-                    }
-
-                    return [
-                        'job_order' => $jobOrder,
-                        'transaction_id' => $transaction->id,
-                        'payment_url' => $paymentUrl,
-                        'otp_sent' => $otpCode !== null,
-                        'otp_expires_at' => $otpCode?->expires_at?->toISOString(),
-                    ];
+                        return [
+                            'job_order' => $jobOrder,
+                            'transaction_id' => $transaction->id,
+                            'payment_url' => $paymentUrl,
+                            'otp_sent' => $otpCode !== null,
+                            'otp_expires_at' => $otpCode?->expires_at?->toISOString(),
+                        ];
+                    });
                 });
             });
 
@@ -403,7 +411,7 @@ class CustomerBookingController extends Controller
     }
 
     /**
-     * Verify a booking OTP code and approve the job order.
+     * Verify a booking OTP code while keeping the job order pending approval.
      */
     public function verifyBookingOtp(VerifyBookingOtpRequest $request): JsonResponse
     {
@@ -441,9 +449,8 @@ class CustomerBookingController extends Controller
             ], 403);
         }
 
-        DB::transaction(function () use ($otp, $jobOrder) {
+        DB::transaction(function () use ($otp) {
             $otp->markUsed();
-            $jobOrder->update(['status' => JobOrderStatus::Approved]);
         });
 
         return response()->json([
@@ -451,7 +458,7 @@ class CustomerBookingController extends Controller
             'data' => [
                 'job_order' => new JobOrderResource($jobOrder->fresh(['customer', 'vehicle', 'service', 'items'])),
             ],
-            'message' => 'Booking verified successfully. Your slot is now confirmed.',
+            'message' => 'Booking verified successfully. Awaiting shop approval.',
         ]);
     }
 
@@ -520,6 +527,46 @@ class CustomerBookingController extends Controller
         $lockKey = sprintf('booking-slot:%s:%s', $arrivalDate, $arrivalTime);
 
         return Cache::lock($lockKey, $lockSeconds)->block($waitSeconds, $callback);
+    }
+
+    /**
+     * @template T
+     *
+     * @param  callable():T  $callback
+     * @return T
+     */
+    private function withCustomerBookingLock(int $customerId, string $arrivalDate, callable $callback): mixed
+    {
+        $lockSeconds = max((int) config('inventory.booking_slot_lock_seconds', 10), 1);
+        $waitSeconds = max((int) config('inventory.booking_slot_lock_wait_seconds', 5), 1);
+        $lockKey = sprintf('booking-customer:%d:%s', $customerId, $arrivalDate);
+
+        return Cache::lock($lockKey, $lockSeconds)->block($waitSeconds, $callback);
+    }
+
+    private function ensureNoDuplicateSameDayBooking(Customer $customer, int $vehicleId, int $serviceId, string $arrivalDate): void
+    {
+        $hasConflict = JobOrder::query()
+            ->where('customer_id', $customer->id)
+            ->whereDate('arrival_date', $arrivalDate)
+            ->whereIn('status', [
+                JobOrderStatus::Created->value,
+                JobOrderStatus::PendingApproval->value,
+                JobOrderStatus::Approved->value,
+                JobOrderStatus::InProgress->value,
+                JobOrderStatus::Completed->value,
+                JobOrderStatus::Settled->value,
+            ])
+            ->where(function (Builder $query) use ($vehicleId, $serviceId): void {
+                $query
+                    ->where('vehicle_id', $vehicleId)
+                    ->orWhere('service_id', $serviceId);
+            })
+            ->exists();
+
+        if ($hasConflict) {
+            throw new HttpException(422, 'You already have a booking for this date using the selected vehicle or service. Please choose another vehicle, service, or date.');
+        }
     }
 
     /**

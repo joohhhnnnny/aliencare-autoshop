@@ -154,6 +154,53 @@ export function getScheduleLabel(order: JobOrder): string {
     return '—';
 }
 
+export function getScheduleDateTime(order: JobOrder): Date | null {
+    if (!order.arrival_date || !order.arrival_time) {
+        return null;
+    }
+
+    const scheduled = new Date(`${order.arrival_date}T${order.arrival_time}`);
+    if (Number.isNaN(scheduled.getTime())) {
+        return null;
+    }
+
+    return scheduled;
+}
+
+export function isScheduleNow(order: JobOrder): boolean {
+    if (!order.arrival_date || !order.arrival_time) {
+        return false;
+    }
+
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const scheduled = getScheduleDateTime(order);
+
+    if (!scheduled) {
+        return false;
+    }
+
+    return order.arrival_date === currentDate && now.getTime() >= scheduled.getTime();
+}
+
+export function isBookingUnattended(order: JobOrder): boolean {
+    if (!order.arrival_date) {
+        return false;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    if (order.arrival_date >= today) {
+        return false;
+    }
+
+    if (order.status === 'completed' || order.status === 'settled' || order.status === 'cancelled') {
+        return false;
+    }
+
+    return true;
+}
+
 // ── Lifecycle helpers ───────────────────────────────────────────────────────
 export type PrimaryAction = 'submit' | 'approve' | 'start' | 'complete' | 'settle' | 'none';
 
@@ -188,24 +235,45 @@ export function formatServiceCategory(category: string | null | undefined): stri
 }
 
 // ── Queue helpers ────────────────────────────────────────────────────────────
-export type QueueStage = 'waiting' | 'in_service' | 'ready_for_payment';
+export type QueueStage = 'waiting' | 'in_service' | 'ready_for_payment' | 'unattended';
 
 const STAGE_ORDER: Record<QueueStage, number> = {
     in_service: 0,
     waiting: 1,
     ready_for_payment: 2,
+    unattended: 3,
 };
 
 export function getQueueStage(order: JobOrder): QueueStage {
+    if (isBookingUnattended(order)) return 'unattended';
     if (order.status === 'completed') return 'ready_for_payment';
-    if (order.status === 'in_progress') return 'in_service';
+    if (order.status === 'in_progress' && isScheduleNow(order)) return 'in_service';
     return 'waiting';
 }
 
 export function getQueueStageLabel(stage: QueueStage): string {
     if (stage === 'in_service') return 'In Service';
     if (stage === 'ready_for_payment') return 'For Payment';
+    if (stage === 'unattended') return 'Unattended';
     return 'Waiting';
+}
+
+export function getQueueStageMeta(order: JobOrder): { label: string; className: string } {
+    const stage = getQueueStage(order);
+
+    if (stage === 'in_service') {
+        return { label: 'In Service', className: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' };
+    }
+
+    if (stage === 'ready_for_payment') {
+        return { label: 'For Payment', className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' };
+    }
+
+    if (stage === 'unattended') {
+        return { label: 'Unattended', className: 'border-zinc-500/40 bg-zinc-500/10 text-zinc-300' };
+    }
+
+    return { label: 'Waiting', className: 'border-amber-500/30 bg-amber-500/10 text-amber-300' };
 }
 
 export function getQueueSortKey(order: JobOrder): string {

@@ -215,7 +215,7 @@ class CustomerBookingApiTest extends TestCase
             ->assertJsonPath('message', 'Selected arrival slot is full. Please choose another time.');
     }
 
-    public function test_store_allows_booking_when_existing_pending_booking_hold_has_expired(): void
+    public function test_store_rejects_booking_when_existing_pending_booking_hold_has_expired_and_same_vehicle_is_used(): void
     {
         BookingSlot::query()->where('time', '10:00')->update(['capacity' => 1]);
         $date = now()->addDay()->toDateString();
@@ -238,8 +238,8 @@ class CustomerBookingApiTest extends TestCase
 
         $this->actingAs($this->user)
             ->postJson('/api/v1/customer/book', $payload)
-            ->assertStatus(201)
-            ->assertJsonPath('success', true);
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'You already have a booking for this date using the selected vehicle or service. Please choose another vehicle, service, or date.');
     }
 
     public function test_store_creates_booking_when_slot_is_available(): void
@@ -260,7 +260,7 @@ class CustomerBookingApiTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.status', 'approved')
+            ->assertJsonPath('data.status', 'pending_approval')
             ->assertJsonPath('data.source', 'Online Booking')
             ->assertJsonPath('data.arrival_date', $date)
             ->assertJsonPath('data.arrival_time', '10:00');
@@ -270,7 +270,7 @@ class CustomerBookingApiTest extends TestCase
             'vehicle_id' => $this->vehicle->id,
             'service_id' => $this->service->id,
             'source' => 'online_booking',
-            'status' => 'approved',
+            'status' => 'pending_approval',
             'arrival_date' => $date,
             'arrival_time' => '10:00',
         ]);
@@ -279,6 +279,111 @@ class CustomerBookingApiTest extends TestCase
 
         $this->assertNotNull($created?->reservation_expires_at);
         $this->assertTrue($created?->reservation_expires_at?->isFuture() ?? false);
+    }
+
+    public function test_store_rejects_duplicate_booking_for_same_vehicle_on_same_day(): void
+    {
+        BookingSlot::query()->where('time', '10:00')->update(['capacity' => 2]);
+        $date = now()->addDay()->toDateString();
+
+        $existingService = ServiceCatalog::create([
+            'name' => 'Brake Service',
+            'description' => 'Brake inspection and adjustment',
+            'price_label' => 'P1500',
+            'price_fixed' => 1500,
+            'duration' => '45 mins',
+            'estimated_duration' => '45-60 mins',
+            'category' => 'maintenance',
+            'features' => ['Brake pad inspection'],
+            'includes' => ['Brake fluid check'],
+            'rating' => 4.2,
+            'rating_count' => 5,
+            'recommended' => false,
+            'is_active' => true,
+        ]);
+
+        JobOrder::factory()->create([
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $this->vehicle->id,
+            'service_id' => $existingService->id,
+            'status' => 'pending_approval',
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+            'reservation_expires_at' => now()->addMinutes(30),
+        ]);
+
+        CustomerTransaction::create([
+            'customer_id' => $this->customer->id,
+            'job_order_id' => JobOrder::query()->latest('id')->first()?->id,
+            'type' => 'invoice',
+            'amount' => 200,
+            'xendit_status' => 'PAID',
+            'paid_at' => now(),
+        ]);
+
+        $newService = ServiceCatalog::create([
+            'name' => 'Air Filter Replacement',
+            'description' => 'Replace the cabin air filter',
+            'price_label' => 'P900',
+            'price_fixed' => 900,
+            'duration' => '30 mins',
+            'estimated_duration' => '30-45 mins',
+            'category' => 'maintenance',
+            'features' => ['Filter replacement'],
+            'includes' => ['New cabin filter'],
+            'rating' => 4.1,
+            'rating_count' => 3,
+            'recommended' => false,
+            'is_active' => true,
+        ]);
+
+        $payload = [
+            'vehicle_id' => $this->vehicle->id,
+            'service_id' => $newService->id,
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+        ];
+
+        $this->actingAs($this->user)
+            ->postJson('/api/v1/customer/book', $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'You already have a booking for this date using the selected vehicle or service. Please choose another vehicle, service, or date.');
+    }
+
+    public function test_store_with_payment_rejects_duplicate_booking_for_same_service_on_same_day(): void
+    {
+        BookingSlot::query()->where('time', '10:00')->update(['capacity' => 2]);
+        $date = now()->addDay()->toDateString();
+
+        $otherVehicle = Vehicle::factory()->create([
+            'customer_id' => $this->customer->id,
+        ]);
+
+        JobOrder::factory()->create([
+            'customer_id' => $this->customer->id,
+            'vehicle_id' => $otherVehicle->id,
+            'service_id' => $this->service->id,
+            'status' => 'approved',
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+        ]);
+
+        $payload = [
+            'vehicle_id' => $this->vehicle->id,
+            'service_id' => $this->service->id,
+            'arrival_date' => $date,
+            'arrival_time' => '10:00',
+            'payment_method' => 'xendit',
+        ];
+
+        $this->mock(XenditService::class, function ($mock): void {
+            $mock->shouldNotReceive('createInvoice');
+        });
+
+        $this->actingAs($this->user)
+            ->postJson('/api/v1/customer/book-with-payment', $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'You already have a booking for this date using the selected vehicle or service. Please choose another vehicle, service, or date.');
     }
 
     public function test_store_with_payment_creates_booking_transaction_and_payment_url(): void

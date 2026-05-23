@@ -1,9 +1,10 @@
 import CustomerLayout from '@/components/layout/customer-layout';
+import { useToast } from '@/components/ui/toast';
 import { useCustomerBilling } from '@/hooks/useCustomerBilling';
 import { paymentService } from '@/services/paymentService';
 import { type BreadcrumbItem } from '@/types';
 import { CustomerBillingReceipt, CustomerTransaction } from '@/types/customer';
-import { AlertCircle, ArrowLeft, Banknote, Calendar, CheckCircle2, CreditCard, Download, Printer, Receipt, TrendingUp, XCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Banknote, Calendar, CheckCircle2, CreditCard, Download, Printer, Receipt, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -11,6 +12,25 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/customer' },
     { title: 'Billing & Payment', href: '/customer/billing' },
 ];
+
+const PAYMENT_TOAST_DEDUPE_KEY = 'aliencare.billing.paymentToastAt';
+const PAYMENT_TOAST_RESULT_KEY = 'aliencare.billing.paymentToastResult';
+const PAYMENT_TOAST_WINDOW_MS = 2000;
+
+function shouldSkipPaymentToast(result: string): boolean {
+    if (typeof window === 'undefined' || !window.sessionStorage) return false;
+    const lastAtRaw = window.sessionStorage.getItem(PAYMENT_TOAST_DEDUPE_KEY);
+    const lastResult = window.sessionStorage.getItem(PAYMENT_TOAST_RESULT_KEY);
+    const lastAt = lastAtRaw ? Number(lastAtRaw) : Number.NaN;
+    if (!Number.isFinite(lastAt) || lastResult !== result) return false;
+    return Date.now() - lastAt < PAYMENT_TOAST_WINDOW_MS;
+}
+
+function markPaymentToast(result: string): void {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    window.sessionStorage.setItem(PAYMENT_TOAST_DEDUPE_KEY, String(Date.now()));
+    window.sessionStorage.setItem(PAYMENT_TOAST_RESULT_KEY, result);
+}
 
 type TabType = 'pending' | 'paid' | 'receipts';
 
@@ -342,7 +362,7 @@ export default function BillingPayment() {
     const [payingId, setPayingId] = useState<number | null>(null);
     const [payError, setPayError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
-    const [paymentBanner, setPaymentBanner] = useState<'success' | 'failed' | null>(null);
+    const { success, error: toastError } = useToast();
 
     const {
         pendingItems,
@@ -372,7 +392,25 @@ export default function BillingPayment() {
         const paymentResult = searchParams.get('payment');
         if (!paymentResult) return;
 
-        setPaymentBanner(paymentResult === 'success' ? 'success' : 'failed');
+        if (shouldSkipPaymentToast(paymentResult)) {
+            setSearchParams(
+                (prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('payment');
+                    return next;
+                },
+                { replace: true },
+            );
+            return;
+        }
+
+        markPaymentToast(paymentResult);
+
+        if (paymentResult === 'success') {
+            success('Payment successful! Your billing status is being updated.', 'Payment successful');
+        } else {
+            toastError('Payment was not completed. Please try again.', 'Payment failed');
+        }
 
         // Clear the query param from the URL without a full navigation
         setSearchParams(
@@ -383,9 +421,6 @@ export default function BillingPayment() {
             },
             { replace: true },
         );
-
-        // Auto-dismiss banner after 8 seconds
-        const dismissTimer = setTimeout(() => setPaymentBanner(null), 8000);
 
         // Poll for updated billing data on success (handles webhook delay)
         if (paymentResult === 'success') {
@@ -404,7 +439,6 @@ export default function BillingPayment() {
         }
 
         return () => {
-            clearTimeout(dismissTimer);
             stopPolling();
         };
         // Run only once on mount when payment param is present
@@ -501,26 +535,6 @@ export default function BillingPayment() {
                 </div>
 
                 <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-                    {/* Payment result banner */}
-                    {paymentBanner === 'success' && (
-                        <div className="flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-400">
-                            <CheckCircle2 className="h-4 w-4 shrink-0" />
-                            Payment successful! Your billing status is being updated.
-                            <button onClick={() => setPaymentBanner(null)} className="ml-auto">
-                                <XCircle className="h-4 w-4 text-green-400/60 hover:text-green-400" />
-                            </button>
-                        </div>
-                    )}
-                    {paymentBanner === 'failed' && (
-                        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            Payment was not completed. Please try again.
-                            <button onClick={() => setPaymentBanner(null)} className="ml-auto">
-                                <XCircle className="h-4 w-4 text-red-400/60 hover:text-red-400" />
-                            </button>
-                        </div>
-                    )}
-
                     {/* Loading / Error state */}
                     {billingError && (
                         <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">

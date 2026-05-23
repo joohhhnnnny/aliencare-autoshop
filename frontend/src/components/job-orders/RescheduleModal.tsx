@@ -2,6 +2,20 @@ import { customerService } from '@/services/customerService';
 import { Loader2, X } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 
+function formatDateYmd(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function getMinimumBookingDateYmd(): string {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    return formatDateYmd(d);
+}
+
 interface Booking {
     id: number;
     jobOrder: string;
@@ -17,8 +31,11 @@ interface RescheduleModalProps {
 }
 
 export function RescheduleModal({ booking, onClose, onRescheduled }: RescheduleModalProps) {
-    const today = new Date().toISOString().slice(0, 10);
-    const [date, setDate] = useState(booking.arrivalDateRaw ?? today);
+    const minDate = getMinimumBookingDateYmd();
+    const [date, setDate] = useState(() => {
+        const initialDate = booking.arrivalDateRaw ?? minDate;
+        return initialDate < minDate ? minDate : initialDate;
+    });
     const [time, setTime] = useState(booking.arrivalTimeRaw ?? '');
     const [slots, setSlots] = useState<string[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
@@ -104,7 +121,7 @@ export function RescheduleModal({ booking, onClose, onRescheduled }: RescheduleM
                                 setDate(e.target.value);
                                 setTime('');
                             }}
-                            min={today}
+                            min={minDate}
                             required
                             className="h-10 w-full rounded-lg border border-[#2a2a2e] bg-[#0d0d10] px-3 text-sm text-foreground focus:border-[#d4af37] focus:outline-none"
                         />

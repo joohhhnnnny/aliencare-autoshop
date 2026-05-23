@@ -16,7 +16,7 @@ class RescheduleCustomerJobOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'arrival_date' => ['required', 'date', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'arrival_date' => ['required', 'date', 'date_format:Y-m-d', 'after:today'],
             'arrival_time' => ['required', 'date_format:H:i'],
         ];
     }
@@ -25,7 +25,7 @@ class RescheduleCustomerJobOrderRequest extends FormRequest
     {
         return [
             'arrival_date.required' => 'Please select an arrival date.',
-            'arrival_date.after_or_equal' => 'Arrival date cannot be in the past.',
+            'arrival_date.after' => 'Arrival date must be at least tomorrow.',
             'arrival_time.required' => 'Please select an arrival time.',
             'arrival_time.date_format' => 'Invalid time format. Expected HH:MM.',
         ];

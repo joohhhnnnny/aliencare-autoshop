@@ -123,9 +123,9 @@ function ToastItem({ toast, onClose }: { toast: ToastState; onClose: (id: string
     const isError = variant === 'error';
     const isSuccess = variant === 'success';
 
-    const iconClass = isSuccess ? 'text-emerald-400' : isError ? 'text-rose-400' : 'text-[#d4af37]';
-    const borderClass = isSuccess ? 'border-emerald-500/30' : isError ? 'border-rose-500/30' : 'border-[#d4af37]/35';
-    const bgClass = isSuccess ? 'bg-emerald-500/10' : isError ? 'bg-rose-500/10' : 'bg-[#d4af37]/10';
+    const iconClass = isSuccess ? 'text-emerald-200' : isError ? 'text-rose-200' : 'text-amber-200';
+    const borderClass = 'border-emerald-700/50';
+    const bgClass = 'bg-emerald-600';
 
     const Icon = isSuccess ? CheckCircle2 : isError ? XCircle : Info;
     const motionClass = toast.state === 'open' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2';
@@ -135,17 +135,17 @@ function ToastItem({ toast, onClose }: { toast: ToastState; onClose: (id: string
             data-state={toast.state}
             role="status"
             aria-live={isError ? 'assertive' : 'polite'}
-            className={`pointer-events-auto w-full rounded-lg border ${borderClass} ${bgClass} ${motionClass} px-4 py-3 shadow-lg backdrop-blur transition duration-200 ease-out`}
+            className={`pointer-events-auto w-full rounded-lg border ${borderClass} ${bgClass} ${motionClass} px-4 py-3 shadow-lg transition duration-200 ease-out`}
         >
             <div className="flex items-start gap-3">
                 <Icon className={`mt-0.5 h-4 w-4 ${iconClass}`} />
                 <div className="flex-1">
-                    {toast.title && <p className="text-sm font-semibold text-foreground">{toast.title}</p>}
-                    <p className="text-xs text-muted-foreground">{toast.message}</p>
+                    {toast.title && <p className="text-sm font-semibold text-emerald-50">{toast.title}</p>}
+                    <p className="text-xs text-emerald-100/90">{toast.message}</p>
                 </div>
                 <button
                     onClick={() => onClose(toast.id)}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-emerald-100/80 transition-colors hover:text-emerald-50"
                     aria-label="Dismiss notification"
                 >
                     <X className="h-3.5 w-3.5" />

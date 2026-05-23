@@ -1,5 +1,7 @@
 import {
     formatPeso,
+    isBookingUnattended,
+    getQueueStageMeta,
     getEstimatedAmount,
     getScheduleLabel,
     getServiceName,
@@ -73,12 +75,14 @@ export default function JobOrderTable({ orders, selectedId, onSelect, variant, r
                 ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto">
                 {orders.map((order) => {
                     const selected = selectedId === order.id;
                     const amount = getEstimatedAmount(order);
-                    const status = STATUS_META[order.status];
+                    const isUnattended = isBookingUnattended(order);
+                    const status = isUnattended ? STATUS_META.cancelled : STATUS_META[order.status];
                     const sourceLabel = getSourceLabel(order);
+                    const stageMeta = getQueueStageMeta(order);
 
                     return (
                         <button
@@ -108,16 +112,8 @@ export default function JobOrderTable({ orders, selectedId, onSelect, variant, r
                                         <p className="text-xs text-muted-foreground">{getServiceName(order)}</p>
                                     </div>
                                     <div className="">
-                                        <span
-                                            className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                                                order.status === 'in_progress'
-                                                    ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300'
-                                                    : order.status === 'completed'
-                                                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                                                      : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-                                            }`}
-                                        >
-                                            {order.status === 'in_progress' ? 'In Service' : order.status === 'completed' ? 'For Payment' : 'Waiting'}
+                                        <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${stageMeta.className}`}>
+                                            {stageMeta.label}
                                         </span>
                                     </div>
                                     <div className="">

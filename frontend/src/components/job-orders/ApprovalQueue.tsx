@@ -42,7 +42,7 @@ export default function ApprovalQueue({ orders, selectedId, onSelect, onApprove,
                 <span>Actions</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto">
                 {orders.map((order) => {
                     const selected = selectedId === order.id;
                     const amount = getEstimatedAmount(order);

@@ -18,7 +18,7 @@ class StoreCustomerBookingRequest extends FormRequest
         return [
             'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
             'service_id' => ['required', 'integer', 'exists:service_catalogs,id'],
-            'arrival_date' => ['required', 'date', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'arrival_date' => ['required', 'date', 'date_format:Y-m-d', 'after:today'],
             'arrival_time' => ['required', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
@@ -32,7 +32,7 @@ class StoreCustomerBookingRequest extends FormRequest
             'service_id.required' => 'Please select a service.',
             'service_id.exists' => 'Selected service does not exist.',
             'arrival_date.required' => 'Please select an arrival date.',
-            'arrival_date.after_or_equal' => 'Arrival date cannot be in the past.',
+            'arrival_date.after' => 'Arrival date must be at least tomorrow.',
             'arrival_time.required' => 'Please select an arrival time.',
             'arrival_time.date_format' => 'Invalid time format. Expected HH:MM.',
         ];
