@@ -13,7 +13,6 @@ import {
     getQueueSortKey,
     getSourceLabel,
     hasSchedule,
-    isApprovalNeeded,
     isBookingUnattended,
     isPaidInFull,
     isPendingBilling,

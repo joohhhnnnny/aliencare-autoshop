@@ -106,6 +106,8 @@ export function InventoryTable() {
         return () => clearTimeout(timer);
     }, [searchTerm, categoryFilter, stockFilter, updateFilters]);
 
+    const { success, error: toastError } = useToast();
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -123,8 +125,6 @@ export function InventoryTable() {
             </Alert>
         );
     }
-
-    const { success, error: toastError } = useToast();
 
     const handleAddStock = async () => {
         setAddStockError(null);

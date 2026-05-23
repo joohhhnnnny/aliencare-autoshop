@@ -6,7 +6,6 @@ import {
     FileText,
     Filter,
     RefreshCcw,
-    Search,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -69,18 +68,6 @@ function getTransactionType(entry: AuditLog): string {
     return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
-function getXenditStatusBadge(status: string) {
-    if (status === 'PAID') {
-        return <Badge className="border-green-500/30 bg-green-500/10 text-green-300">Paid</Badge>;
-    }
-    if (status === 'PENDING') {
-        return <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300">Pending</Badge>;
-    }
-    if (status === 'EXPIRED') {
-        return <Badge className="border-red-500/30 bg-red-500/10 text-red-300">Expired</Badge>;
-    }
-    return <span className="text-muted-foreground">{status || '—'}</span>;
-}
 
 export function BillingAuditLogPanel() {
     const {
