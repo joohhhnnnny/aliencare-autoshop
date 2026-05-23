@@ -1,8 +1,6 @@
 import { CustomerOnboardingOnlyRoute, GuestRoute, ProtectedRoute } from '@/router';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
-// Layouts
-import AuthLayout from '@/components/layout/auth-layout';
 
 // Public pages
 import AboutUs from '@/pages/aboutus';
@@ -86,7 +84,7 @@ export default function App() {
             <Route
                 element={
                     <GuestRoute>
-                        <AuthLayout />
+                        <Outlet />
                     </GuestRoute>
                 }
             >

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Enums\AccountStatus;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -73,6 +74,7 @@ class CustomerOnboardingApiTest extends TestCase
 
         $this->assertNotNull($customer);
         $this->assertNotNull($customer?->onboarding_completed_at);
+        $this->assertSame(AccountStatus::Approved, $customer?->account_status);
 
         $this->assertDatabaseHas('vehicles', [
             'customer_id' => $customer?->id,
@@ -88,7 +90,7 @@ class CustomerOnboardingApiTest extends TestCase
             'email' => 'existing-customer@example.com',
         ]);
 
-        $customer = Customer::factory()->create([
+        $customer = Customer::factory()->pending()->create([
             'email' => 'existing-customer@example.com',
             'first_name' => 'Old',
             'last_name' => 'Name',
@@ -134,6 +136,7 @@ class CustomerOnboardingApiTest extends TestCase
         $this->assertSame('Customer', $customer->last_name);
         $this->assertSame('09998887777', $customer->phone_number);
         $this->assertNotNull($customer->onboarding_completed_at);
+        $this->assertSame(AccountStatus::Approved, $customer->account_status);
 
         $this->assertSame('Civic', $vehicle->model);
         $this->assertSame(2023, $vehicle->year);

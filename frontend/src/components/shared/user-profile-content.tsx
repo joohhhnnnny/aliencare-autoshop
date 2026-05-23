@@ -1,12 +1,18 @@
 import { RoleAvatar } from '@/components/shared/role-avatar';
+import InputError from '@/components/shared/input-error';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { useAuth } from '@/context/AuthContext';
 import { useCustomerProfile } from '@/hooks/useCustomerProfile';
+import { flattenValidationErrors } from '@/lib/validation-errors';
+import { ApiError } from '@/services/api';
 import { authService } from '@/services/authService';
 import { customerService } from '@/services/customerService';
 import type { JobOrder, Vehicle } from '@/types/customer';
-import { CalendarDays, Car, FileText, History, Loader2, Mail, MapPin, Phone, SquarePen, X } from 'lucide-react';
-import { useState } from 'react';
+import { CalendarDays, Car, Eye, EyeOff, FileText, History, Loader2, Mail, MapPin, Phone, SquarePen, X } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 import { AddVehicleModal } from './add-vehicle-modal';
 import { type EditField, ProfileEditModal } from './profile-edit-modal';
 
@@ -35,6 +41,16 @@ export function UserProfileContent({ showTitle = true, subtitle }: UserProfileCo
     const [serviceHistoryError, setServiceHistoryError] = useState<string | null>(null);
 
     const [nonCustomerSection, setNonCustomerSection] = useState<'personal' | 'account' | 'special' | null>(null);
+
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [newPasswordConfirmation, setNewPasswordConfirmation] = useState('');
+    const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+    const [passwordFormError, setPasswordFormError] = useState<string | null>(null);
+    const [passwordProcessing, setPasswordProcessing] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
     const roleLabel = isCustomer ? 'Customer' : isFrontdesk ? 'Front Desk' : 'Admin';
 
@@ -147,6 +163,39 @@ export function UserProfileContent({ showTitle = true, subtitle }: UserProfileCo
         } catch (err) {
             error(err instanceof Error ? err.message : 'Failed to update special information.');
             throw err;
+        }
+    };
+
+    const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setPasswordProcessing(true);
+        setPasswordErrors({});
+        setPasswordFormError(null);
+
+        try {
+            await authService.updatePassword({
+                current_password: currentPassword,
+                password: newPassword,
+                password_confirmation: newPasswordConfirmation,
+            });
+
+            setCurrentPassword('');
+            setNewPassword('');
+            setNewPasswordConfirmation('');
+            success('Password updated.');
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 422) {
+                const flatErrors = flattenValidationErrors(err.validationErrors);
+                if (Object.keys(flatErrors).length > 0) {
+                    setPasswordErrors(flatErrors);
+                }
+            } else {
+                const message = err instanceof Error ? err.message : 'Unable to update password.';
+                setPasswordFormError(message);
+                error(message);
+            }
+        } finally {
+            setPasswordProcessing(false);
         }
     };
 
@@ -429,6 +478,108 @@ export function UserProfileContent({ showTitle = true, subtitle }: UserProfileCo
                                         <span className="italic">{isCustomer ? (loading ? '…' : (customer?.special_notes ?? '—')) : 'N/A'}</span>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {isCustomer && (
+                            <div className="profile-card rounded-xl p-5">
+                                <div className="mb-3">
+                                    <h3 className="font-semibold">Password</h3>
+                                    <p className="text-xs text-muted-foreground">Update your password anytime for this account.</p>
+                                </div>
+                                <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="profile-current-password" className="text-sm text-muted-foreground">
+                                            Current password
+                                        </Label>
+                                        <div className="group flex items-center gap-2 rounded-lg border border-[#2a2a2e] bg-[#0a0b0f] px-3 transition focus-within:border-[#d4af37]/40">
+                                            <Input
+                                                id="profile-current-password"
+                                                type={showCurrentPassword ? 'text' : 'password'}
+                                                autoComplete="current-password"
+                                                value={currentPassword}
+                                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                                className="h-10 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                onClick={() => setShowCurrentPassword((value) => !value)}
+                                                className="shrink-0 text-white/40 transition hover:text-white/70"
+                                                aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                                            >
+                                                {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
+                                        <InputError message={passwordErrors.current_password} className="text-xs text-red-400" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="profile-new-password" className="text-sm text-muted-foreground">
+                                            New password
+                                        </Label>
+                                        <div className="group flex items-center gap-2 rounded-lg border border-[#2a2a2e] bg-[#0a0b0f] px-3 transition focus-within:border-[#d4af37]/40">
+                                            <Input
+                                                id="profile-new-password"
+                                                type={showNewPassword ? 'text' : 'password'}
+                                                autoComplete="new-password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                className="h-10 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                onClick={() => setShowNewPassword((value) => !value)}
+                                                className="shrink-0 text-white/40 transition hover:text-white/70"
+                                                aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                                            >
+                                                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
+                                        <InputError message={passwordErrors.password} className="text-xs text-red-400" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="profile-confirm-password" className="text-sm text-muted-foreground">
+                                            Confirm new password
+                                        </Label>
+                                        <div className="group flex items-center gap-2 rounded-lg border border-[#2a2a2e] bg-[#0a0b0f] px-3 transition focus-within:border-[#d4af37]/40">
+                                            <Input
+                                                id="profile-confirm-password"
+                                                type={showPasswordConfirmation ? 'text' : 'password'}
+                                                autoComplete="new-password"
+                                                value={newPasswordConfirmation}
+                                                onChange={(e) => setNewPasswordConfirmation(e.target.value)}
+                                                className="h-10 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                tabIndex={-1}
+                                                onClick={() => setShowPasswordConfirmation((value) => !value)}
+                                                className="shrink-0 text-white/40 transition hover:text-white/70"
+                                                aria-label={showPasswordConfirmation ? 'Hide password confirmation' : 'Show password confirmation'}
+                                            >
+                                                {showPasswordConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
+                                        </div>
+                                        <InputError message={passwordErrors.password_confirmation} className="text-xs text-red-400" />
+                                    </div>
+
+                                    {passwordFormError && <InputError message={passwordFormError} className="text-xs text-red-400" />}
+
+                                    <Button
+                                        type="submit"
+                                        className="h-10 w-full rounded-lg bg-[#d4af37] text-sm font-semibold text-black transition hover:bg-[#e6c24e]"
+                                        disabled={passwordProcessing}
+                                    >
+                                        {passwordProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+                                        {passwordProcessing ? 'Updating...' : 'Update password'}
+                                    </Button>
+                                </form>
                             </div>
                         )}
                     </div>

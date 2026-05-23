@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { flattenValidationErrors } from '@/lib/validation-errors';
 import { ApiError } from '@/services/api';
-import { ArrowLeft, LoaderCircle, LockKeyhole, Mail, User } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, User } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -49,6 +49,8 @@ export default function Register() {
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -195,7 +197,7 @@ export default function Register() {
                                 <LockKeyhole className="h-4 w-4 shrink-0 text-white/50 transition group-focus-within:text-[#d4af37]" />
                                 <Input
                                     id="password"
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
@@ -204,6 +206,15 @@ export default function Register() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="h-11 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
                                 />
+                                <button
+                                    type="button"
+                                    tabIndex={-1}
+                                    onClick={() => setShowPassword((value) => !value)}
+                                    className="shrink-0 text-white/40 transition hover:text-white/70"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
                             </div>
                             <InputError message={errors.password} className="text-xs text-red-400" />
                         </div>
@@ -217,7 +228,7 @@ export default function Register() {
                                 <LockKeyhole className="h-4 w-4 shrink-0 text-white/50 transition group-focus-within:text-[#d4af37]" />
                                 <Input
                                     id="password_confirmation"
-                                    type="password"
+                                    type={showPasswordConfirmation ? 'text' : 'password'}
                                     required
                                     tabIndex={5}
                                     autoComplete="new-password"
@@ -226,6 +237,15 @@ export default function Register() {
                                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                                     className="h-11 border-0 bg-transparent px-0 text-sm text-white shadow-none placeholder:text-white/40 focus-visible:ring-0"
                                 />
+                                <button
+                                    type="button"
+                                    tabIndex={-1}
+                                    onClick={() => setShowPasswordConfirmation((value) => !value)}
+                                    className="shrink-0 text-white/40 transition hover:text-white/70"
+                                    aria-label={showPasswordConfirmation ? 'Hide password confirmation' : 'Show password confirmation'}
+                                >
+                                    {showPasswordConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
                             </div>
                             <InputError message={errors.password_confirmation} className="text-xs text-red-400" />
                         </div>

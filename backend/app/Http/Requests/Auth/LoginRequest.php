@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\AccountStatus;
+use App\Enums\UserRole;
+use App\Models\Customer;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -51,7 +54,42 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $this->ensureCustomerIsActive();
+
         RateLimiter::clear($this->throttleKey());
+    }
+
+    private function ensureCustomerIsActive(): void
+    {
+        $user = $this->user();
+
+        if (! $user) {
+            return;
+        }
+
+        if (! in_array($user->role, [UserRole::Customer, UserRole::Customer->value], true)) {
+            return;
+        }
+
+        $customer = Customer::withTrashed()->where('email', $user->email)->first();
+
+        if (! $customer) {
+            return;
+        }
+
+        $status = $customer->account_status instanceof AccountStatus
+            ? $customer->account_status->value
+            : (string) $customer->account_status;
+
+        $isActive = (bool) ($customer->is_active ?? true);
+
+        if ($customer->trashed() || ! $isActive || $status === AccountStatus::Deleted->value) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'This customer account is deactivated. Please contact the front desk.',
+            ]);
+        }
     }
 
     /**

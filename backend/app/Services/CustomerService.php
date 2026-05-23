@@ -123,8 +123,11 @@ class CustomerService implements CustomerServiceInterface
         return DB::transaction(function () use ($customerId, $data, $userId, $ip) {
             $customer = $this->customerRepository->findByIdOrFail($customerId);
             $oldData = $customer->only(array_keys($data));
+            $previousEmail = $customer->email;
 
             $customer = $this->customerRepository->updatePersonalInfo($customerId, $data);
+
+            $this->syncUserAccount($customer, $previousEmail, $data);
 
             $this->logAudit($customerId, $userId, 'update', 'customer', $oldData, $customer->only(array_keys($data)), $ip);
 
@@ -152,12 +155,26 @@ class CustomerService implements CustomerServiceInterface
 
             $customer = $this->customerRepository->findByEmail($user->email);
             $oldData = null;
+            $approvalPayload = [
+                'account_status' => AccountStatus::Approved,
+                'is_active' => true,
+                'approved_at' => now(),
+                'approved_by' => null,
+                'rejection_reason' => null,
+            ];
 
             if ($customer) {
                 $oldData = $customer->only(array_keys($profileData));
-                $customer = $this->customerRepository->update($customer->id, $profileData);
+                $currentStatus = $customer->account_status instanceof AccountStatus
+                    ? $customer->account_status->value
+                    : (string) $customer->account_status;
+                $payload = $currentStatus === AccountStatus::Pending->value
+                    ? array_merge($profileData, $approvalPayload)
+                    : $profileData;
+
+                $customer = $this->customerRepository->update($customer->id, $payload);
             } else {
-                $customer = $this->customerRepository->registerCustomer($profileData);
+                $customer = $this->customerRepository->create(array_merge($profileData, $approvalPayload));
             }
 
             foreach ($vehicles as $vehicleData) {
@@ -492,6 +509,42 @@ class CustomerService implements CustomerServiceInterface
 
         if ($hasActive) {
             throw new \InvalidArgumentException('Cannot delete customer with active job orders.');
+        }
+    }
+
+    private function syncUserAccount(Customer $customer, ?string $previousEmail, array $data): void
+    {
+        if (! array_key_exists('first_name', $data)
+            && ! array_key_exists('last_name', $data)
+            && ! array_key_exists('email', $data)) {
+            return;
+        }
+
+        $lookupEmail = $previousEmail ?? $customer->email;
+
+        if (! $lookupEmail) {
+            return;
+        }
+
+        $user = User::where('email', $lookupEmail)->first();
+
+        if (! $user) {
+            return;
+        }
+
+        $updates = [];
+        $fullName = trim("{$customer->first_name} {$customer->last_name}");
+
+        if ($fullName !== '' && $user->name !== $fullName) {
+            $updates['name'] = $fullName;
+        }
+
+        if (array_key_exists('email', $data) && $customer->email && $user->email !== $customer->email) {
+            $updates['email'] = $customer->email;
+        }
+
+        if ($updates !== []) {
+            $user->update($updates);
         }
     }
 

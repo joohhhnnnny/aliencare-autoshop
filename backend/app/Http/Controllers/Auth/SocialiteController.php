@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\AccountStatus;
 use App\Models\User;
+use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -47,8 +49,35 @@ class SocialiteController
             ]
         );
 
+        if ($this->isCustomerDeactivated($user)) {
+            return redirect()->to(
+                config('app.frontend_url').'/auth/oauth-callback?status=error&message='.urlencode('This customer account is deactivated.')
+            );
+        }
+
         Auth::login($user, true);
 
         return redirect()->to(config('app.frontend_url').'/auth/oauth-callback?status=success');
+    }
+
+    private function isCustomerDeactivated(User $user): bool
+    {
+        if ($user->role !== 'customer') {
+            return false;
+        }
+
+        $customer = Customer::withTrashed()->where('email', $user->email)->first();
+
+        if (! $customer) {
+            return false;
+        }
+
+        $status = $customer->account_status instanceof AccountStatus
+            ? $customer->account_status->value
+            : (string) $customer->account_status;
+
+        return $customer->trashed()
+            || ! (bool) ($customer->is_active ?? true)
+            || $status === AccountStatus::Deleted->value;
     }
 }

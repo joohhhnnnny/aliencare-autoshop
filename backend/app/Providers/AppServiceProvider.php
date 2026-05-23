@@ -38,6 +38,7 @@ use App\Services\JobOrderService;
 use App\Services\ReportService;
 use App\Services\ReservationService;
 use App\Services\VehicleService;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -96,6 +97,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configurePasswordResetUrl();
         $this->warnIfXenditConfigLooksInvalid();
 
         RateLimiter::for('api', function (Request $request) {
@@ -122,6 +124,16 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-pos', fn (User $user): bool => $this->canManagePos($user));
         Gate::define('manage-customers', fn (User $user): bool => $this->canManageCustomers($user));
         Gate::define('manage-system-settings', fn (User $user): bool => $user->role === UserRole::Admin);
+    }
+
+    private function configurePasswordResetUrl(): void
+    {
+        ResetPassword::createUrlUsing(function (User $user, string $token): string {
+            $frontendUrl = rtrim((string) config('app.frontend_url', 'http://localhost:5173'), '/');
+            $email = urlencode($user->getEmailForPasswordReset());
+
+            return "{$frontendUrl}/reset-password/{$token}?email={$email}";
+        });
     }
 
     private function canManageBookingSlots(User $user): bool
